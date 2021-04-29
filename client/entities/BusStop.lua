@@ -29,7 +29,20 @@ end
 
 -- Registers the events
 BusStop.RegisterEvents = function(ESX)
-    BusStop.RequestAllStops()
+    BusStop.RequestAllStops(function(stops)
+
+        for _, stop in pairs(stops) do
+            stop.blip = AddBlipForCoord(stop.x, stop.y, stop.z)
+            SetBlipSprite(stop.blip, 513)
+            SetBlipDisplay(stop.blip, 4)
+            SetBlipScale(stop.blip, 0.9)
+            -- SetBlipColour(info.blip, info.colour)
+            SetBlipAsShortRange(stop.blip, true)
+            BeginTextCommandSetBlipName("STRING")
+            AddTextComponentString("Bus Stop")
+            EndTextCommandSetBlipName(stop.blip)
+        end
+    end)
 end
 
 -- Renders the stops
