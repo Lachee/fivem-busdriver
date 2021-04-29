@@ -4,5 +4,5 @@ E = {
     GetBusStops = 'lacheebus:requestBusStops',
 }
 
-print('Loaded Events: ')
-for k, v in pairs(E) do print(k, v) end
+-- print('Loaded Events: ')
+-- for k, v in pairs(E) do print(k, v) end

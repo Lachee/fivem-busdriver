@@ -44,7 +44,10 @@ RegisterCommand('create_stop', function(source, args, rawCommand)
     -- Prepare the identifying coordinates
     local identifyingCoordinates = coordinates
     local model = BusStop.FindNearestModel()
-    if model then identifyingCoordinates = GetEntityCoords(model) end
+    print('Model', model)
+    if model then 
+        identifyingCoordinates = GetEntityCoords(model) 
+    end
 
     -- Request the stop
     BusStop.RequestCreateStop(identifyingCoordinates, coordinates, heading, name, function(hash) 

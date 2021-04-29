@@ -3,11 +3,15 @@ BusStop = {}
 
 -- Creates a new bus stop at the given location
 BusStop.CreateStop = function(identifingCoordinate, stopCoordinate, heading, name)
+    
+    local  hash = sha1.hex(tostring(identifingCoordinate))
+    print('Creating new bus stop', identifingCoordinate, stopCoordinate, heading, name)
+    
     local bindings = { 
-        hash = sha1.hex(tostring(identifingCoordinate)),
-        x = coordinate.x, 
-        y = coordinate.y, 
-        z = coordinate.z, 
+        hash = hash,
+        x = stopCoordinate.x, 
+        y = stopCoordinate.y, 
+        z = stopCoordinate.z, 
         heading = heading, 
         name = name 
     };
