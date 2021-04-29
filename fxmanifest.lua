@@ -6,24 +6,24 @@ author 'Lachee'
 description 'ESX Job for being a bus driver.'
 repository 'https://github.com/lachee/fivem-busdriver'
 
+client_scripts {
+    "config.lua",
+    "common/utils.lua",
+    "client/client.lua"
+}
+
+server_scripts {
+    "@mysql-async/lib/MySQL.lua",
+    "config.lua",
+    "common/utils.lua",
+    "server/server.lua"
+}
+
+
 fx_version 'adamant'
 games { 'rdr3', 'gta5' }
 
 dependencies {
     'mysql-async'
-    'esx'
-}
-
-client_scripts{
-    "config.lua",
-    "common/utils.lua"
-    "client/client.lua"
-}
-
-server_scripts{
-    "@mysql-async/lib/MySQL.lua",
-    "config.lua",
-    "common/utils.lua"
-    "server/server.lua",
 }
 
