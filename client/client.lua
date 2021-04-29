@@ -43,26 +43,31 @@ AddEventHandler(E.SpawnVehicle, function()
 end)
 
 
+
 -- Debug Visualisation
+FindStops = false
 Citizen.CreateThread(function()
     local frame = 0;
     while true do
         Citizen.Wait(5)
         frame = frame + 1
 
-        local radius = 15.0
-        local propCoords = false
-        
-        radius = 500
-        local closestObject = FindClosestObject(BusStop.Models, radius)
-        if closestObject then 
-            propCoords = GetEntityCoords(closestObject)
-            DrawZoneMarkerGrounded(propCoords, 10.0, { r = 255, g = 0, b = 255 }) 
+        if FindStops then
+            local radius = 15.0
+            local propCoords = false
+            
+            radius = 500
+            local closestObject = FindClosestObject(BusStop.Models, radius)
+            if closestObject then 
+                propCoords = GetEntityCoords(closestObject)
+                DrawZoneMarkerGrounded(propCoords, 10.0, { r = 255, g = 0, b = 255 }) 
 
-            if frame % 2 == 0 then
-                SetNewWaypoint(propCoords.x, propCoords.y)
+                if frame % 2 == 0 then
+                    SetNewWaypoint(propCoords.x, propCoords.y)
+                end
             end
         end
       
+        BusStop.Render()
     end
 end)

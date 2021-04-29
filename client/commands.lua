@@ -47,6 +47,7 @@ RegisterCommand('create_stop', function(source, args, rawCommand)
     print('Model', model)
     if model then 
         identifyingCoordinates = GetEntityCoords(model) 
+        heading = GetEntityHeading(model) + 90
     end
 
     -- Request the stop
@@ -61,3 +62,19 @@ end, false)
 TriggerEvent('chat:addSuggestion', '/create_stop', 'Adds a stop', {
 	{name = 'name', help = 'The name of the stop'}
 })
+
+
+
+-- Registers a particular bus stop at the players location
+RegisterCommand('find_stops', function(source, args, rawCommand)
+    if FindStops then 
+        FindStops = false
+    else
+        FindStops = true
+    end
+
+    TriggerEvent('chat:addMessage', {
+        template = 'Find stops has been toggled to {0}',
+        args = {  FindStops }
+    });
+end)
