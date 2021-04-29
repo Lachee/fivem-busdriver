@@ -8,15 +8,24 @@ repository 'https://github.com/lachee/fivem-busdriver'
 
 client_scripts {
     "config.lua",
-    "common/utils.lua",
-    "client/client.lua"
+    "common/*.lua",
+
+    "client/entities/*.lua",
+    
+    "client/utils.lua",
+    "client/client.lua",
+    "client/commands.lua",
 }
 
 server_scripts {
     "@mysql-async/lib/MySQL.lua",
     "config.lua",
-    "common/utils.lua",
-    "server/server.lua"
+    "common/*.lua",
+
+    "server/entities/*.lua",
+ 
+    "server/server.lua",
+    "server/commands.lua",
 }
 
 
