@@ -6,7 +6,7 @@ BusStop.CreateStop = function(identifingCoordinate, stopCoordinate, heading, nam
     
     local  hash = sha1.hex(tostring(identifingCoordinate))
     print('Creating new bus stop', identifingCoordinate, stopCoordinate, heading, name)
-    
+
     local bindings = { 
         hash = hash,
         x = stopCoordinate.x, 
@@ -16,7 +16,14 @@ BusStop.CreateStop = function(identifingCoordinate, stopCoordinate, heading, nam
         name = name 
     };
 
-    MySQL.Async.execute('INSERT INTO lachee_bus_stops (hash, x, y, z, heading, name) VALUES (@hash, @x, @y, @z, @heading, @name)', bindings, function (count) end)
+    MySQL.Async.execute('INSERT INTO lachee_bus_stops (hash, x, y, z, heading, name) VALUES (@hash, @x, @y, @z, @heading, @name)', bindings, function (count) 
+        if count > 0 then
+            BusStop.GetAllStops(function(stops)
+                TriggerEvent(E.GetBusStops, stops)
+            end)
+        end
+    end)
+
     return bindings.hash
 end
 
@@ -40,6 +47,7 @@ BusStop.RegisterServerCallbacks = function(ESX)
     
     -- We requested to create a bus stop, so we should
     ESX.RegisterServerCallback(E.GetBusStops, function(source, callback)
+        print('request to get all stops')
         BusStop.GetAllStops(callback)
     end)
 

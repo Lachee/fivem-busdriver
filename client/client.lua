@@ -5,8 +5,8 @@ Citizen.CreateThread(function()
     while true do
         if ESX == nil then
             TriggerEvent("esx:getSharedObject", function(library)
-                print('Found ESX')
                 ESX = library
+                BusStop.RegisterEvents(ESX)
             end)
             
             Citizen.Wait(0)
