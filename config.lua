@@ -1,0 +1,2 @@
+-- Master Config
+Config = {}

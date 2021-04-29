@@ -9,6 +9,7 @@ This script was written from scratch as practice for the up coming delivery driv
 - esx
 - esx_addonaccount
 - esx_skin
+- mysql_async
 
 ## Via Git ( recommended )
 From your resouces directory for the ESX server:
@@ -18,3 +19,5 @@ git clone https://github.com/Lachee/fivem-busdriver.git "[lachee]/lachee-busdriv
 
 Then in you server cfg:
 - `ensure lachee-busdriver`
+
+**Ensure you migrate your database with the `sql/*.sql` scripts.**
