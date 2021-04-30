@@ -5,6 +5,8 @@ E = {
 
     GetRoutes = 'lacheebus:requestRoutes',          -- Gets a list of routes
     GetRoute = 'lacheebus:requestSpecificRoute',    -- Gets a specific route
+
+    BeginJob = 'lacheebus:startJob',                -- Begin the job
 }
 
 -- print('Loaded Events: ')

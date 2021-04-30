@@ -2,7 +2,7 @@
 -- Load up the ESX. Its a single line cause im a lazy git and prefer it this way
 ESX = nil
 Citizen.CreateThread(function()
-    while true do
+    while ESX == nil do
         if ESX == nil then
             TriggerEvent("esx:getSharedObject", function(library)
                 ESX = library
@@ -10,8 +10,6 @@ Citizen.CreateThread(function()
             end)
             
             Citizen.Wait(0)
-        else 
-            Citizen.Wait(500)
         end
     end
 end)
@@ -44,17 +42,25 @@ end)
 
 function OnJobMarker() 
     if Job.active then
-        ESX.ShowHelpNotification("Press ~g~~INPUT_CONTEXT~~s~ to end your route and surrend the bound")
-    else
-        ESX.ShowHelpNotification("Press ~g~~INPUT_CONTEXT~~s~ to begin your route", true)
+        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~r~forfeit~s~ your route and lose your bond.")
         if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-            print("YOU PRESSED THE BUTTON")
+            Job.End(true)
+        end
+    else
+        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to begin a route.", true)
+        if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
+            Job.Begin()
         end
     end
 end
 
 function OnBusMarker() 
-    ESX.ShowHelpNotification("Get ~r~out~s~ of the bus to end your route")
+    ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to leave the bus and finish your route.")
+ 
+    -- Wait for the bed to leave the vehicle
+    if not IsPedInVehicle(PlayerPedId(), Job.bus, true) then
+        Job.End(false)
+    end
 end
 
 -- Draw all the markers and handle the main game loop
@@ -68,13 +74,14 @@ Citizen.CreateThread(function()
         -- DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
 
         local coords    = GetEntityCoords(PlayerPedId())
-        local vehicle   = GetVehiclePedIsIn(PlayerPedId()) 
+        local vehicle   = GetVehiclePedIsIn(PlayerPedId(), true) 
         local distance  = GetDistanceBetweenCoords(coords, Config.coordinates, false)
 
 
         -- Draw the bus return marker
         -- TODO: Check if player is in same bus
         if vehicle ~= nil and vehicle == Job.bus then
+            distance = GetDistanceBetweenCoords(GetEntityCoords(vehicle), Config.coordinates, false)
             if distance < 1.5 then
                 DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
                 OnBusMarker()
