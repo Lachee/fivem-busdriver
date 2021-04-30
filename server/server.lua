@@ -5,4 +5,5 @@ ESX = nil
 TriggerEvent("esx:getSharedObject", function(library) 
     ESX = library 
     BusStop.RegisterServerCallbacks(ESX)
+    Route.RegisterServerCallbacks(ESX)
 end)

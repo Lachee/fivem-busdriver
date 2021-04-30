@@ -34,6 +34,13 @@ BusStop.GetAllStops = function(callback)
     end)
 end
 
+-- Gets all the stops at the given location
+BusStop.GetStops = function(ids, callback) 
+    MySQL.Async.fetchAll('SELECT * FROM lachee_bus_stops WHERE id IN (@ids)', { ids = ids }, function(results)
+        callback(results)
+    end)
+end
+
 BusStop.RegisterServerCallbacks = function(ESX) 
 
     print('BusStop.lua registering events')
@@ -47,7 +54,6 @@ BusStop.RegisterServerCallbacks = function(ESX)
     
     -- We requested to create a bus stop, so we should
     ESX.RegisterServerCallback(E.GetBusStops, function(source, callback)
-        print('request to get all stops')
         BusStop.GetAllStops(callback)
     end)
 
