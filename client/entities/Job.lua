@@ -5,7 +5,7 @@ Job.bus = nil
 Job.route = nil
 Job.nextStop = 1
 
-Job.Begin = function() 
+Job.Begin = function(callback) 
     Job.active = true
 
     ESX.TriggerServerCallback(E.BeginJob, function(route) 
@@ -16,7 +16,9 @@ Job.Begin = function()
             Job.active = false
             return
         end
+        
         Job.route = route
+        Job.nextStop = 1
 
         -- TODO: Trigger Bond Deposit
         
@@ -24,6 +26,7 @@ Job.Begin = function()
         Job.SpawnBus(route.type, Config.coordinates, function(bus) 
             TaskWarpPedIntoVehicle(PlayerPedId(), bus, -1)
             ESX.ShowNotification('You have started working', true, true, 10)
+            if callback then callback(route) end
         end)
     end)
 end

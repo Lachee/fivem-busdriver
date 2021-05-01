@@ -1,6 +1,18 @@
 
 
 if Config.debug then
+
+    RegisterCommand('begin', function(source, args, rawCommand)
+        local ped       = GetPlayerPed(source)    
+        local entity    = ped
+        local vehicle   = GetVehiclePedIsIn(ped, false)
+        if vehicle then
+            ESX.Game.DeleteVehicle(vehicle)
+        end
+        
+        Job.Begin()
+    end)
+
     RegisterCommand('coords', function(source, args, rawCommand) 
         local ped       = GetPlayerPed(source)    
         local entity    = ped
