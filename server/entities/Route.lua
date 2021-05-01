@@ -27,7 +27,7 @@ Route.GetRoute = function(routeId, callback)
 
             -- Sort the routes
             table.sort(stops, function(a, b) return a.order < b.order end)
-            routeDetail.route = stops
+            routeDetail.stops = stops
 
             -- Add the number of passengers that plan to get on for each route and where they will get off.
             -- TODO: This Part

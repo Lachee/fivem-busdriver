@@ -3,9 +3,10 @@ BusStop = {}
 BusStop.Models = { 'prop_busstop_05', 'prop_busstop_02', 'prop_busstop_04', 'prop_bus_stop_sign' }
 BusStop.Stops = {}
 
--- Finds the nearest bus stop model with 25m
-BusStop.FindNearestModel = function() 
-    return FindClosestObject(BusStop.Models, 50)
+-- Finds the nearest bus stop model with 25m.
+--  Coords is optional
+BusStop.FindNearestModel = function(coords) 
+    return FindClosestObject(BusStop.Models, 25, coords)
 end
 
 -- Requests a new stop to be created
@@ -46,8 +47,21 @@ BusStop.RegisterEvents = function(ESX)
 end
 
 -- Renders the stops
-BusStop.Render = function()
+BusStop.RenderAll = function()
     for k, stop in pairs(BusStop.Stops) do
-        DrawBusZone(stop, stop.heading, { r = 255, g = 255, b = 0 })
+        BusStop.Render(stop)
     end
+end
+
+-- Render a specific stop. Color is optional
+BusStop.Render = function(stop, color)
+    if color == nil then color = { r = 255, g = 255, b = 0 } end
+    
+    DrawBusZone(stop, stop.heading, color)
+    local model = BusStop.FindNearestModel(stop)
+    local textCoord = stop
+    if model then textCoord = GetEntityCoords(model) end
+    
+    textCoord = vector3(textCoord.x+.0, textCoord.y+.0, textCoord.z+4.25)
+    DrawText3D(textCoord, tostring(stop.id) .. ' | ' .. stop.name, 3)
 end

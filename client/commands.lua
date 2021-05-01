@@ -2,7 +2,7 @@
 
 if Config.debug then
 
-    RegisterCommand('begin', function(source, args, rawCommand)
+    RegisterCommand('busme', function(source, args, rawCommand)
         local ped       = GetPlayerPed(source)    
         local entity    = ped
         local vehicle   = GetVehiclePedIsIn(ped, false)

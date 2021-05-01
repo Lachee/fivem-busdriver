@@ -43,18 +43,23 @@ DrawBusZone = function(coordinate, heading, color)
     )
 end
 
--- Finds the nearest object from the given list
-FindClosestObject = function(names, radius)
-    local pedCoords = GetEntityCoords(PlayerPedId())
+-- Finds the nearest object from the given list. Coords is optional.
+FindClosestObject = function(names, radius, coords)
+    if coords == nil then 
+        coords = GetEntityCoords(PlayerPedId()) 
+    else
+        coords = vector3(coords.x + .0, coords.y + .0, coords.z + .0)
+    end
+
     local closestObject = nil
     local closestDist = nil
 
     for i = 1, #names do
         local name = names[i]
-        local objectId = FindNearestObject(name, radius)
+        local objectId = FindNearestObject(name, radius, coords)
         if objectId ~= nil then
-            local coords = GetEntityCoords(objectId)
-            local dist = #(pedCoords - coords)
+            local objCoords = GetEntityCoords(objectId)
+            local dist = #(coords - objCoords)
             if closestObject == nil or dist < closestDist then
                 closestObject = objectId
                 closestDist = dist
@@ -66,11 +71,14 @@ FindClosestObject = function(names, radius)
 end
 
 -- Finds an obejct with the name closes to the player
-FindNearestObject = function(name, radius) 
-    
-    local pedCoords = GetEntityCoords(PlayerPedId())
-    local objectId = GetClosestObjectOfType(pedCoords, radius + .0, GetHashKey(name), false)
-    
+FindNearestObject = function(name, radius, coords) 
+    if coords == nil then 
+        coords = GetEntityCoords(PlayerPedId()) 
+    else
+        coords = vector3(coords.x + .0, coords.y + .0, coords.z + .0)
+    end
+
+    local objectId = GetClosestObjectOfType(coords, radius + .0, GetHashKey(name), false)
     if DoesEntityExist(objectId) then
         return objectId
     end
@@ -79,8 +87,8 @@ FindNearestObject = function(name, radius)
 end
 
 -- Similar to FindNearestObject but returns the Vector3 coords or false instead
-FindNearestObjectCoords = function(name, radius) 
-    local objectId = FindNearestObject(name, radius)
+FindNearestObjectCoords = function(name, radius, coords) 
+    local objectId = FindNearestObject(name, radius, coords)
     if objectId ~= nil then
         local coords = GetEntityCoords(objectId)
         if coords ~= nil then
@@ -88,4 +96,24 @@ FindNearestObjectCoords = function(name, radius)
         end
     end
     return false
+end
+
+DrawText3D = function(coords, text, size, font) 
+    if ESX then
+        ESX.Game.Utils.DrawText3D(coords, text, size, font)
+    else
+        local onScreen, _x, _y = World3dToScreen2d(x, y, z)
+        local px, py, pz = table.unpack(GetGameplayCamCoords())
+        
+        SetTextScale(0.35, 0.35)
+        SetTextFont(4)
+        SetTextProportional(1)
+        SetTextColour(255, 255, 255, 215)
+        SetTextEntry("STRING")
+        SetTextCentre(1)
+        AddTextComponentString(text)
+        DrawText(_x, _y)
+        local factor = (string.len(text)) / 370
+        DrawRect(_x, _y + 0.0125, 0.005 + factor, 0.03, 0, 0, 0, 100)
+    end
 end

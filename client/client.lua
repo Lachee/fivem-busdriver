@@ -68,7 +68,7 @@ Citizen.CreateThread(function()
     local frame = 0;
     while true do
         Citizen.Wait(5)
-        BusStop.Render()
+        BusStop.RenderAll()
         
         -- Draw the zone to spawn the bus
         -- DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })

@@ -19,6 +19,8 @@ Job.Begin = function(callback)
         
         Job.route = route
         Job.nextStop = 1
+        Route.DrawRoute(Job.route)
+        
 
         -- TODO: Trigger Bond Deposit
         
