@@ -58,10 +58,11 @@ function OnBusMarker()
     ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to leave the bus and finish your route.")
  
     -- Wait for the bed to leave the vehicle
-    if not IsPedInVehicle(PlayerPedId(), Job.bus, true) then
+    if not IsPedInVehicle(PlayerPedId(), Bus.current, true) then
         Job.End(false)
     end
 end
+
 
 -- Draw all the markers and handle the main game loop
 Citizen.CreateThread(function()
@@ -77,10 +78,9 @@ Citizen.CreateThread(function()
         local vehicle   = GetVehiclePedIsIn(PlayerPedId(), true) 
         local distance  = GetDistanceBetweenCoords(coords, Config.coordinates, false)
 
-
         -- Draw the bus return marker
         -- TODO: Check if player is in same bus
-        if vehicle ~= nil and vehicle == Job.bus then
+        if vehicle ~= nil and vehicle == Bus.current then
             distance = GetDistanceBetweenCoords(GetEntityCoords(vehicle), Config.coordinates, false)
             if distance < 1.5 then
                 DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
@@ -97,6 +97,11 @@ Citizen.CreateThread(function()
                 DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 200, 100, 0 })
             end
         end
+
+        -- Run the job
+        if Job.active then
+            Job.UpdateThread()
+        end
        
     end
 end)
@@ -104,12 +109,24 @@ end)
 -- Draw the debug visualisations
 if Config.debug then
     FindStops = false
+    DoorsOpen = false
     Citizen.CreateThread(function()
         local frame = 0;
         while true do
             Citizen.Wait(5)
             frame = frame + 1
 
+            if Bus.current then
+                if Bus.doorsOpen then
+                    ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to close doors")
+                else
+                    ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open doors")
+                end
+                if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
+                    Bus.ToggleDoors()
+                end
+            end
+            
             if FindStops then
                 local radius = 15.0
                 local propCoords = false

@@ -1,10 +1,47 @@
 Job = {}
 
 Job.active = false
-Job.bus = nil
 Job.route = nil
 Job.nextStop = 1
+Job.canLoadPassengers = false
 
+-- Internal update loop
+Job.UpdateThread = function() 
+    if not Job.active then return end
+
+    local stop = Job.GetNextStop()
+    if not stop then return end
+    
+    -- Set the GPS
+    local stopCoords = vector3(stop.x+.0, stop.y+.0, stop.z+.0)
+    SetNewWaypoint(stopCoords)
+
+    -- Check if the bus is on it
+    if Bus.current == nil then
+        ESX.ShowHelpNotification("Get back into your bus.")
+        return
+    end
+
+    local coords = GetEntityCoords(Bus.current)
+    local heading = GetEntityHeading(Bus.current)
+    local distance = GetDistanceBetweenCoords(coords, stopCoords, false)
+    local headingDiff = (heading - stop.heading + 180 + 360) % 360 - 180
+    Job.canLoadPassengers = false    
+    if distance <= Config.stopDistanceLimit then
+        if headingDiff <= Config.stopHeadingLimit and headingDiff >= -Config.stopHeadingLimit then
+            Job.canLoadPassengers = true
+        end
+    end
+
+    if Job.canLoadPassengers then
+        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open doors")
+        if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
+            Bus.OpenDoors()
+        end
+    end
+end
+
+-- Begins the job
 Job.Begin = function(callback) 
     Job.active = true
 
@@ -19,13 +56,12 @@ Job.Begin = function(callback)
         
         Job.route = route
         Job.nextStop = 1
-        Route.DrawRoute(Job.route)
-        
+        Route.SetGps(Job.route)
 
         -- TODO: Trigger Bond Deposit
         
         -- Spawn a bus
-        Job.SpawnBus(route.type, Config.coordinates, function(bus) 
+        Bus.Create(route.type, Config.coordinates, function(bus) 
             TaskWarpPedIntoVehicle(PlayerPedId(), bus, -1)
             ESX.ShowNotification('You have started working', true, true, 10)
             if callback then callback(route) end
@@ -33,6 +69,7 @@ Job.Begin = function(callback)
     end)
 end
 
+-- Ends the job
 Job.End = function(forfeit) 
     -- Disable the active state of the job
     Job.active = false
@@ -46,50 +83,15 @@ Job.End = function(forfeit)
     end
 
     -- Finally clear the route
-    Job.DestroyBus()
+    Bus.Destroy()
     Job.route = nil
 end
 
--- Destroys the bus. If the PED is still in the bus, then it will be requested to leave
-Job.DestroyBus = function(callback)
-    if Job.bus then
 
-        -- Wait for the bed to leave the vehicle
-        -- if IsPedInVehicle(PlayerPedId(), Job.bus, true) then
-        --     TaskLeaveVehicle(PlayerPedId(), Job.bus, 256)
-        --     while IsPedInVehicle(PlayerPedId(), Job.bus, true) do
-        --         Citizen.Wait(0)
-        --     end
-        --     Citizen.Wait(300)
-        -- end
-        
-        -- Destroy the bus
-        print("Destroyed the existing bus")
-        ESX.Game.DeleteVehicle(Job.bus)
-        Job.bus = nil
-        if callback then callback(true) end
-        return true
+-- Gets the stop the bus has to get to
+Job.GetNextStop = function() 
+    if Job.route and #Job.route.stops >= Job.nextStop then
+        return Job.route.stops[Job.nextStop]
     end
-    
-    print("Failed to delete bus because it doesn't exist")
-    if callback then callback(false) end
     return false
-end
-Job.SpawnBus = function(type, coordsHeading, callback)
-    -- Destroy the previous bus?
-    if Job.DestroyBus() then
-        ESX.ShowNotification('Previous bus was ~r~DESTROYED', true, true, 10)
-    end
-
-    local model = 'bus'
-    if type == 'rural' then model = 'coach' end
-    if type == 'terminal' then model = 'airbus' end
-    if type == 'party' then model = 'pbus2' end
-    if type == 'tour' then model = 'tourbus' end
-
-    ESX.Game.SpawnVehicle(model, coordsHeading, coordsHeading.w, function(vehicle) 
-        Job.bus = vehicle
-        ESX.Game.SetVehicleProperties(Job.bus, { fuelLevel = 100 })
-        callback(Job.bus)
-    end)
 end
