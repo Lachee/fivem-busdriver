@@ -30,8 +30,17 @@ Route.GetRoute = function(routeId, callback)
             routeDetail.stops = stops
 
             -- Add the number of passengers that plan to get on for each route and where they will get off.
-            -- TODO: This Part
-
+            for i, s in pairs(stops) do
+                s.passengers = {}
+                if i ~= #stops then
+                    local count = math.random(1, 3)
+                    for k = 1, count do
+                        local destination = math.random(i+1, #stops)
+                        table.insert(s.passengers, destination)
+                    end
+                end
+            end
+            
             -- Give back the results
             if callback ~= nil then callback(routeDetail) end
         end)

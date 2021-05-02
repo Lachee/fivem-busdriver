@@ -2,6 +2,32 @@
 
 if Config.debug then
 
+    RegisterCommand('skip', function(source, args, rawCommand)
+        if not Job.active then
+            print('cannot skip, you are not on a route')
+            TriggerEvent('chat:addMessage', {
+                template = 'You have to be in an active route',
+                args = { }
+            });
+            return
+        end
+
+        if not Job.Teleport() then
+            print('cannot skip, failed to teleport')
+            TriggerEvent('chat:addMessage', {
+                template = 'You have finished your route, return the bus',
+                args = {  }
+            });
+            return
+        end
+
+        print('Teleport success')
+        TriggerEvent('chat:addMessage', {
+            template = 'You have been teleported',
+            args = {  }
+        });
+    end)
+
     RegisterCommand('busme', function(source, args, rawCommand)
         local ped       = GetPlayerPed(source)    
         local entity    = ped
@@ -10,8 +36,22 @@ if Config.debug then
             ESX.Game.DeleteVehicle(vehicle)
         end
         
-        SetPedCoordsKeepVehicle(ped, Config.coordinates.x, coordinates.y, coordinates.z)
-        Job.Begin()
+        --Teleport and get your bus            
+        TriggerEvent('chat:addMessage', {
+                template = 'Fetching a bus...',
+                args = { }
+        });
+
+        SetPedCoordsKeepVehicle(ped, Config.coordinates.x, Config.coordinates.y, Config.coordinates.z)
+        Job.Begin(function()
+            TriggerEvent('chat:addMessage', {
+                template = 'Teleporting you to the start...',
+                args = { }
+            });
+        
+            -- Teleport to the stop
+            Job.Teleport()
+        end)
     end)
 
     RegisterCommand('coords', function(source, args, rawCommand) 

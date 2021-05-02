@@ -116,16 +116,16 @@ if Config.debug then
             Citizen.Wait(5)
             frame = frame + 1
 
-            if Bus.current then
-                if Bus.doorsOpen then
-                    ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to close doors")
-                else
-                    ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open doors")
-                end
-                if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-                    Bus.ToggleDoors()
-                end
-            end
+            -- if Bus.current then
+            --     if Bus.doorsOpen then
+            --         ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to close doors")
+            --     else
+            --         ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open doors")
+            --     end
+            --     if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
+            --         Bus.ToggleDoors()
+            --     end
+            -- end
             
             if FindStops then
                 local radius = 15.0

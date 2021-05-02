@@ -34,11 +34,46 @@ Job.UpdateThread = function()
     end
 
     if Job.canLoadPassengers then
-        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open doors")
+        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors")
         if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
             Bus.OpenDoors()
+            Job.SpawnPassengers()
         end
     end
+end
+
+-- Spawns passengers
+Job.SpawnPassengers = function()
+    local stop = Job.GetNextStop()
+    if not stop then return false end
+
+    print('finding safe ped spot')
+    local hasSafeSpot, spot = GetSafeCoordForPed(stop.x, stop.y, stop.z, true, 1)
+    if not hasSafeSpot then return false end
+
+    print('creating random ped')
+    local ped = CreateRandomPed(spot.x, spot.y, spot.z)
+    Citizen.Wait(10)
+
+    print('Telling ped to get in')
+    TaskWarpPedIntoVehicle(ped, Bus.current, -2)
+    --TaskEnterVehicle(ped, Bus.current, 1000, 0, 2.0, 1, 0)
+    return true
+end
+
+-- Teleports the bus to the next stop perfectly
+Job.Teleport = function()     
+    local stop = Job.GetNextStop()
+    if not stop then 
+        print('No stop available')
+        return false
+    end
+
+    local ped = GetPlayerPed(PlayerPedId())
+    print('Setting ped coords', stop.x, stop.y, stop.z, stop.heading)
+    SetPedCoordsKeepVehicle(PlayerPedId(), stop.x+.0, stop.y+.0, stop.z+.0)
+    SetEntityHeading(PlayerPedId(), stop.heading+.0)
+    return true
 end
 
 -- Begins the job
@@ -57,12 +92,16 @@ Job.Begin = function(callback)
         Job.route = route
         Job.nextStop = 1
         Route.SetGps(Job.route)
-
+        
+        -- if Config.debug then print(ESX.DumpTable(Job.route)) end
+        
         -- TODO: Trigger Bond Deposit
         
         -- Spawn a bus
         Bus.Create(route.type, Config.coordinates, function(bus) 
             TaskWarpPedIntoVehicle(PlayerPedId(), bus, -1)
+            Citizen.Wait(10)
+
             ESX.ShowNotification('You have started working', true, true, 10)
             if callback then callback(route) end
         end)
