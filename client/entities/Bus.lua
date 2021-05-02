@@ -92,7 +92,7 @@ Bus.AddPassenger = function(ped, seat, teleport)
     else
         print('Telling ped to get in', seat, ped)
         psg.isEntering = true
-        TaskEnterVehicle(ped, Bus.current, Config.passengerTimeout, seat, 1.0, 1, 0)
+        TaskEnterVehicle(ped, Bus.current, Config.passengerTimeout, seat, 3.0, 1, 0)
     end
 
     table.insert(Bus.passengers, psg)
@@ -124,6 +124,9 @@ end
 -- Checks if all passengers are on board
 Bus.CheckPassengersEmbarked = function() 
     for i, psg in pairs(Bus.passengers) do
+
+        -- TODO: CHeck if bed is dead 
+
         local vehicle = GetVehiclePedIsIn(psg.ped, false)
         if vehicle == nil or vehicle == 0 then
             return false
