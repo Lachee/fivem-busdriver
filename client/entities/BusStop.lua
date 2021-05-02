@@ -88,8 +88,8 @@ BusStop.DrawZone = function(coordinate, heading, color)
             local qRoad = quat(vector3(0, 1, 0), normal)
             DrawQuaternion(coordinate, qRoad, {r=0, g=255, b=0})
 
-            
-            local qNew = qRoad * qHeading
+            -- We need to rotate qRoad 90deg in the direction of qHeading
+            local qNew = qRoad * quat(90, vector3(1, 0, 0))
             DrawQuaternion(coordinate, qNew, {r=0, g=0, b=255})
         end
     end
