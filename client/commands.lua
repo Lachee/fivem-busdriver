@@ -10,6 +10,7 @@ if Config.debug then
             ESX.Game.DeleteVehicle(vehicle)
         end
         
+        SetPedCoordsKeepVehicle(ped, Config.coordinates.x, coordinates.y, coordinates.z)
         Job.Begin()
     end)
 

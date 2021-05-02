@@ -72,7 +72,7 @@ Citizen.CreateThread(function()
         BusStop.RenderAll()
         
         -- Draw the zone to spawn the bus
-        -- DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
+        -- BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
 
         local coords    = GetEntityCoords(PlayerPedId())
         local vehicle   = GetVehiclePedIsIn(PlayerPedId(), true) 
@@ -83,10 +83,10 @@ Citizen.CreateThread(function()
         if vehicle ~= nil and vehicle == Bus.current then
             distance = GetDistanceBetweenCoords(GetEntityCoords(vehicle), Config.coordinates, false)
             if distance < 1.5 then
-                DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
+                BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
                 OnBusMarker()
             else
-                DrawBusZone(Config.coordinates, Config.coordinates.w, { r = 200, 100, 0 })
+                BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 200, 100, 0 })
             end
         else 
             -- Draw the job marker

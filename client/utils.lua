@@ -21,66 +21,45 @@ DrawZoneMarkerGrounded = function(coordinate, radius, color)
     DrawZoneMarker(pos, radius, color)
 end
 
--- Draw the bus zone
-DrawBusZone = function(coordinate, heading, color) 
-    -- Draw the rectangle
-    local depth = 0.5
-    local height = 1.0
-    local size = { x = 3.5, y = 13.0, z = height }
 
-    --Draw the position
-    local z = coordinate.z - depth
-    local grnd, groundZ = GetGroundZFor_3dCoord(coordinate.x, coordinate.y, coordinate.z, 0)
-    if grnd then z = groundZ - depth end
 
-    DrawMarker(43, 
-        coordinate.x + .0, coordinate.y+ .0, z + .0, -- Position
-        0.0, 0.0, 0.0,                               -- Direction
-        0.0, 0.0, heading + .0,                      -- Rotation
-        size.x+ .0, size.y+ .0, size.z+ .0,          -- Scale
-        color.r, color.g, color.b, 0.01,             -- Color
-        0, 0, 0, 0, 0, 0, 0
-    )
+-- OBSOLETE
+FindClosestObject = function(names, radius, coords)
+    return FindNearestObject(names, radius, coords)
 end
 
--- Finds the nearest object from the given list. Coords is optional.
-FindClosestObject = function(names, radius, coords)
+-- Finds the nearest object. If name is an array, then it will find one of each and return the closest
+FindNearestObject = function(name, radius, coords) 
+
+    --Prepare a coordinate
     if coords == nil then 
         coords = GetEntityCoords(PlayerPedId()) 
     else
         coords = vector3(coords.x + .0, coords.y + .0, coords.z + .0)
     end
 
-    local closestObject = nil
-    local closestDist = nil
-
-    for i = 1, #names do
-        local name = names[i]
-        local objectId = FindNearestObject(name, radius, coords)
-        if objectId ~= nil then
-            local objCoords = GetEntityCoords(objectId)
-            local dist = #(coords - objCoords)
-            if closestObject == nil or dist < closestDist then
-                closestObject = objectId
-                closestDist = dist
+    if type(name) == "string" then
+        -- Find the nearest obejct
+        local objectId = GetClosestObjectOfType(coords, radius + .0, GetHashKey(name), false)
+        if DoesEntityExist(objectId) then
+            return objectId
+        end
+    else 
+        -- Find the nearest object for all of them
+        local closestObject = nil
+        local closestDist = nil    
+        for i = 1, #name do
+            local objectId = FindNearestObject(name[i], radius, coords)
+            if objectId ~= nil then
+                local objCoords = GetEntityCoords(objectId)
+                local dist = #(coords - objCoords)
+                if closestObject == nil or dist < closestDist then
+                    closestObject = objectId
+                    closestDist = dist
+                end
             end
         end
-    end
-
-    return closestObject
-end
-
--- Finds an obejct with the name closes to the player
-FindNearestObject = function(name, radius, coords) 
-    if coords == nil then 
-        coords = GetEntityCoords(PlayerPedId()) 
-    else
-        coords = vector3(coords.x + .0, coords.y + .0, coords.z + .0)
-    end
-
-    local objectId = GetClosestObjectOfType(coords, radius + .0, GetHashKey(name), false)
-    if DoesEntityExist(objectId) then
-        return objectId
+        return closestObject
     end
 
     return nil
@@ -117,3 +96,29 @@ DrawText3D = function(coords, text, size, font)
         DrawRect(_x, _y + 0.0125, 0.005 + factor, 0.03, 0, 0, 0, 100)
     end
 end
+
+-- Draws a quaternion at the given location
+DrawQuaternion = function(from, q, color, scale) 
+    if color == nil then color = { r=255, g=0, b=0 } end
+    if scale == nil then scale = 1.0 end
+    -- local from = position
+    -- local too = position + q
+    --from = GetEntityCoords(PlayerPedId())
+
+    local dir = (q * vector3(0, 1, 0))
+    local too = vector3(from.x + (dir.x * scale), from.y + (dir.y * scale), from.z + (dir.z * scale))
+    DrawLine(
+        from.x, from.y, from.z,
+        too.x, too.y, too.z,
+        color.r, color.g, color.b, 1.0
+    )
+
+    -- Initial line for directional information
+    too = vector3(from.x + (dir.x * 0.1), from.y + (dir.y * 0.1), from.z + (dir.z * 0.1))
+    DrawLine(
+        from.x, from.y, from.z,
+        too.x, too.y, too.z,
+        255, 0, 255, 1.0
+    )
+end
+    
