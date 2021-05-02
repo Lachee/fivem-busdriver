@@ -37,36 +37,98 @@ Job.UpdateThread = function()
         ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors")
         if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
             --Bus.OpenDoors()
-            Job.SpawnPassengers()
+            Citizen.CreateThread(function() 
+                Job.DepartPassengers(function() 
+                    Job.BoardPassengers(function()
+                        Bus.CloseDoors()
+                        Job.nextStop = Job.nextStop + 1
+                        ESX.ShowNotification('All passengers ready', true, false, 60)
+                        PlaySoundFromEntity(-1, "Burglar_Bell", Bus.current, "Generic_Alarms", 0, 0)
+                    end)
+                end)
+            end)
         end
     end
 end
 
+Job.DepartPassengers = function(callback)
+    print('kicking the lil shits off')
+
+    -- Tell passengers when their destination arrived
+    for i, p in pairs(Bus.passengers) do
+        if p.destination == Job.nextStop then
+            Bus.RemovePassenger(i)
+        end
+    end
+
+    -- Wait for them to leave
+    print('waiting for them to leave')
+    while not Bus.CheckPassengersDisembarked(function(passenger) 
+        -- Tell the ped to wander around. We dont care.
+        TaskWanderStandard(passenger.ped, 10.0, 10)
+        RemovePedElegantly(passenger.ped)
+    end) do Citizen.Wait(10) end
+    
+    -- Finally callback
+    print('everyone off')
+    ESX.ShowNotification('Passengers disembarked', true, false, 60)
+    callback()
+end
+
 -- Spawns passengers
-Job.SpawnPassengers = function(callback)
+Job.BoardPassengers = function(callback)
+    print('boarding new shits')
     local stop = Job.GetNextStop()
     if not stop then 
         print('stop does not exist')
         return false 
     end
 
-    print('finding safe ped spot')
-    local hasSafeSpot, spot = GetSafeCoordForPed(stop.x, stop.y, stop.z, true, 1)
-    if not hasSafeSpot then 
-        print('no safe spot exists')
-        return false 
-    end
+    -- We will use this and ensure it has gone up
+    local initialPassengerCount = #Bus.passengers
+    local spawnCount = 0
 
-    print('creating random ped')
-    DrawZoneMarkerTTL(spot, 2, {r=255,0,0}, 1000)
-    local seat = Bus.FindFreeSeat()
-    if seat ~= false then
-        SpawnRandomPed(spot, function(ped) Bus.RequestPedToSeat(ped, seat) end)
-    else
-        print('unable to find any seats')
-        return false
-    end
+    -- Spawn in the passengers
+    for i,destination in pairs(stop.passengers) do
 
+        -- TODO: Randomise the spot check
+        local hasSafeSpot, spot = GetSafeCoordForPed(stop.x, stop.y, stop.z, true, 1)
+        if not hasSafeSpot then 
+            print('no safe spot exists')
+            return false 
+        end
+
+        if Config.debug then
+            print('creating random ped')
+            DrawZoneMarkerTTL(spot, 2, {r=255,0,0}, 1000)
+        end
+
+        -- We check if we actually got available seats on the bus before attempting to spawn
+        if Bus.FindFreeSeat() ~= false then
+            spawnCount = spawnCount + 1
+            SpawnRandomPed(spot, function(ped)
+                -- However, we let the bus determine the seat after the fact because async delay
+                local passenger = Bus.AddPassenger(ped, nil) 
+                Bus.SetPassengerDestination(passenger, destination)
+            end)
+        else
+            print('unable to find any seats')
+            return false
+        end
+    end
+        
+    -- Wait till they are all spawned
+    print('waiting for passenger count to go up')
+    while #Bus.passengers < initialPassengerCount + spawnCount do Citizen.Wait(100) end
+
+    -- Wait till they are all on the bus
+    print('waiting for passenger onboard')
+    while not Bus.CheckPassengersEmbarked() do Citizen.Wait(100) end
+
+    -- Finally callback
+    print('We are ready')
+    ESX.ShowNotification('Passengers embarked', true, false, 60)
+    callback()
     return true
 end
 
@@ -100,7 +162,7 @@ Job.Begin = function(callback)
         
         Job.route = route
         Job.nextStop = 2
-        Route.SetGps(Job.route)
+        --Route.SetGps(Job.route)
         
         -- if Config.debug then print(ESX.DumpTable(Job.route)) end
         

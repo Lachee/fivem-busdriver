@@ -75,9 +75,11 @@ if Config.debug then
             });
         
             -- Teleport to the stop
-            -- if bus then
-            --     Job.Teleport()
-            -- end
+            if #args >= 1 then
+                if bus then
+                    Job.Teleport()
+                end
+            end
         end)
     end)
 
