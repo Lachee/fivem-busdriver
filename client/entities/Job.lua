@@ -36,28 +36,37 @@ Job.UpdateThread = function()
     if Job.canLoadPassengers then
         ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors")
         if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-            Bus.OpenDoors()
+            --Bus.OpenDoors()
             Job.SpawnPassengers()
         end
     end
 end
 
 -- Spawns passengers
-Job.SpawnPassengers = function()
+Job.SpawnPassengers = function(callback)
     local stop = Job.GetNextStop()
-    if not stop then return false end
+    if not stop then 
+        print('stop does not exist')
+        return false 
+    end
 
     print('finding safe ped spot')
     local hasSafeSpot, spot = GetSafeCoordForPed(stop.x, stop.y, stop.z, true, 1)
-    if not hasSafeSpot then return false end
+    if not hasSafeSpot then 
+        print('no safe spot exists')
+        return false 
+    end
 
     print('creating random ped')
-    local ped = CreateRandomPed(spot.x, spot.y, spot.z)
-    Citizen.Wait(10)
+    DrawZoneMarkerTTL(spot, 2, {r=255,0,0}, 1000)
+    local seat = Bus.FindFreeSeat()
+    if seat ~= false then
+        SpawnRandomPed(spot, function(ped) Bus.RequestPedToSeat(ped, seat) end)
+    else
+        print('unable to find any seats')
+        return false
+    end
 
-    print('Telling ped to get in')
-    TaskWarpPedIntoVehicle(ped, Bus.current, -2)
-    --TaskEnterVehicle(ped, Bus.current, 1000, 0, 2.0, 1, 0)
     return true
 end
 
@@ -90,7 +99,7 @@ Job.Begin = function(callback)
         end
         
         Job.route = route
-        Job.nextStop = 1
+        Job.nextStop = 2
         Route.SetGps(Job.route)
         
         -- if Config.debug then print(ESX.DumpTable(Job.route)) end
@@ -99,6 +108,12 @@ Job.Begin = function(callback)
         
         -- Spawn a bus
         Bus.Create(route.type, Config.coordinates, function(bus) 
+            if bus == nil then 
+                Job.End(false) 
+                ESX.ShowNotification('~r~Your bus failed to spawn for some reason', true, true, 10)
+                return 
+            end
+
             TaskWarpPedIntoVehicle(PlayerPedId(), bus, -1)
             Citizen.Wait(10)
 

@@ -78,6 +78,11 @@ Citizen.CreateThread(function()
         local vehicle   = GetVehiclePedIsIn(PlayerPedId(), true) 
         local distance  = GetDistanceBetweenCoords(coords, Config.coordinates, false)
 
+        -- Run the job
+        if Job.active then
+            Job.UpdateThread()
+        end
+
         -- Draw the bus return marker
         -- TODO: Check if player is in same bus
         if vehicle ~= nil and vehicle == Bus.current then
@@ -96,13 +101,7 @@ Citizen.CreateThread(function()
             else
                 DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 200, 100, 0 })
             end
-        end
-
-        -- Run the job
-        if Job.active then
-            Job.UpdateThread()
-        end
-       
+        end       
     end
 end)
 

@@ -2,6 +2,29 @@
 
 if Config.debug then
 
+    RegisterCommand('ped', function(source, args, rawCommand)
+            
+        local coords = GetEntityCoords(GetPlayerPed(source))
+
+        print('finding safe ped spot')
+        local hasSafeSpot, spot = GetSafeCoordForPed(coords.x, coords.y, coords.z, true, 1)
+        if not hasSafeSpot then 
+            print('no safe spot exists')
+            return false 
+        end
+
+        print('creating random ped')
+        DrawZoneMarkerTTL(coords, 2, {r=255,g=255,b=0}, 2000)
+        SpawnRandomPed(coords, function(ped)
+            print('self ped', ped)
+        end)
+
+        DrawZoneMarkerTTL(spot, 2, {r=0,g=255,b=0}, 2000)
+        SpawnRandomPed(spot, function(ped)
+            print('spot ped', ped)
+        end)
+    end)
+
     RegisterCommand('skip', function(source, args, rawCommand)
         if not Job.active then
             print('cannot skip, you are not on a route')
@@ -43,14 +66,18 @@ if Config.debug then
         });
 
         SetPedCoordsKeepVehicle(ped, Config.coordinates.x, Config.coordinates.y, Config.coordinates.z)
-        Job.Begin(function()
+        Citizen.Wait(1000)
+
+        Job.Begin(function(bus)
             TriggerEvent('chat:addMessage', {
                 template = 'Teleporting you to the start...',
                 args = { }
             });
         
             -- Teleport to the stop
-            Job.Teleport()
+            -- if bus then
+            --     Job.Teleport()
+            -- end
         end)
     end)
 
