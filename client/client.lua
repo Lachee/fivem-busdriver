@@ -16,16 +16,33 @@ Citizen.CreateThread(function()
     end
 end)
 
+-- Ensures the job blip
+local blip = nil
+function EnsureJob(playerData)
+    local jobName = playerData.job.name
+    if jobName == 'busdriver' then
+        if blip ~= nil then
+            SetBlipDisplay(4)
+        else
+            blip = CreateBlip(513, Config.coordinates, "Bus Depo", 1.0, 16)
+        end
+    elseif blip ~= nil then
+        SetBlipDisplay(blip, 0)
+    end
+end
+
 -- Load up the player data
 RegisterNetEvent("esx:playerLoaded")
 AddEventHandler("esx:playerLoaded", function(playerData)
     ESX.PlayerData = playerData
+    EnsureJob(ESX.PlayerData)
 end)
 
 -- Load up the player job
 RegisterNetEvent("esx:setJob")
 AddEventHandler("esx:setJob", function(newJob)
     ESX.PlayerData["job"] = newJob
+    EnsureJob(ESX.PlayerData)
 end)
 
 -- Spawn a bus

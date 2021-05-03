@@ -151,3 +151,22 @@ EnableControlActions = function(group, controls, toggle)
         EnableControlAction(group, c, toggle)
     end
 end
+
+-- Creates a blip and returns it. Scale and Color are optional
+CreateBlip = function(sprite, coords, name, scale, color) 
+    local blip = AddBlipForCoord(coords.x+.0, coords.y+.0, coords.z+.0)
+    SetBlipSprite(blip, sprite)
+    SetBlipDisplay(blip, 4)
+
+    if scale == nil then scale = 0.5 end
+    SetBlipScale(blip, scale+.0)
+
+    if color == nil then color = 0 end
+    SetBlipColour(blip, color)
+
+    SetBlipAsShortRange(blip, true)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(name)
+    EndTextCommandSetBlipName(blip)
+    return blip
+end
