@@ -128,7 +128,7 @@ Job.PreloadPeds = function()
         
 
         -- Spawn the ped
-        SpawnRandomPed(spawnCoords, function(ped)
+        Ped.SpawnRandom(spawnCoords, function(ped)
             
             print("Ped Spawned", ped)
             table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
