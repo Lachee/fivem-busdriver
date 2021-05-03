@@ -290,7 +290,7 @@ Job.Begin = function(callback)
                 return 
             end
 
-            TaskWarpPedIntoVehicle(PlayerPedId(), bus, -1)
+            Ped.EnterVehicle(PlayerPedId(), bus, -1, Ped.TELEPORT)
             Citizen.Wait(10)
 
             -- Trigger next stop
