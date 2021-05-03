@@ -17,7 +17,7 @@ Job.Process = function()
     if stop ~= nil then
         -- Check if the bus is on it
         if Bus.current == nil then
-            ESX.ShowHelpNotification("Get back into your bus.")
+            ESX.ShowHelpNotification("Get back into your bus.", true, false)
             return
         end
         
@@ -33,6 +33,14 @@ Job.Process = function()
             Job.PreloadPeds()
         end
 
+        -- Determine if we can pickup passengers
+        Job.canBoardPassengers = false
+        if distance <= Config.stopDistanceLimit then
+            if headingDiff <= Config.stopHeadingLimit and headingDiff >= -Config.stopHeadingLimit then
+                Job.canBoardPassengers = true
+            end
+        end
+
         -- We are not boarding and we are not in a spot that can board passengers. Tell the user to go to the stop
         if Job.isBoarding then
             -- We are boarding, so keep the controls disabled and the hazards on
@@ -43,23 +51,19 @@ Job.Process = function()
             }, true)
         else
             -- We are not boarding, display the help notification
-            local stopName = '~y~'.. stop.id .. '~s~ | ~y~' .. stop.name .. '~s~'
-            ESX.ShowHelpNotification('Drive to ' .. stopName, true, false)
-        end
-
-
-        -- Determine if we can pickup passengers
-        Job.canBoardPassengers = false
-        if distance <= Config.stopDistanceLimit then
-            if headingDiff <= Config.stopHeadingLimit and headingDiff >= -Config.stopHeadingLimit then
-                Job.canBoardPassengers = true
+            if not Job.canBoardPassengers then
+                local stopName = '~y~'.. stop.id .. '~s~ | ~y~' .. stop.name .. '~s~'
+                ESX.ShowHelpNotification('Drive to ' .. stopName, true, false)
             end
         end
 
+
         -- If we can board passengers
         if Job.canBoardPassengers then
-            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors", true, false)
-            
+            if not Job.isBoarding then
+                ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors", true, false)
+            end
+
             -- Disable the control
             DisableControlActions(0, {
                 Controls.INPUT_VEH_EXIT,
@@ -86,8 +90,10 @@ Job.Process = function()
                     Job.EmbarkPassengers()
 
                     -- Close the door, show the notif and play a sound
-                    Bus.CloseDoors()
+                    
                     Citizen.Wait(150)
+                    Bus.CloseDoors()
+                    Citizen.Wait(250)
                     ESX.ShowNotification('All passengers ready', true, false, 60)
 
                     -- Increment the stop
@@ -116,12 +122,11 @@ Job.Process = function()
         end
 
         -- Draw the bus zone
-        BusStop.DrawZone(stop, stop.heading, Config.stopColor)
-
+        BusStop.Render(stop, Config.stopColor)
         
         -- We are boarding, wait
         if Job.isBoarding then
-            ESX.ShowHelpNotification('Wait for passengers', true, false, 1)
+            ESX.ShowHelpNotification('Wait for passengers', true, false)
             for _, bp in pairs(Job.boardingPeds) do
                 if not Ped.InVehicle(bp.ped) then
                     local coords = GetEntityCoords(bp.ped)
@@ -131,7 +136,7 @@ Job.Process = function()
         end
     else
         -- We need to clean up
-        ESX.ShowHelpNotification('Return the bus to the ~y~depo', true, false, 1)
+        ESX.ShowHelpNotification('Return the bus to the ~y~depo', true, false)
     end
 end
 
@@ -152,6 +157,8 @@ Job.PreloadPeds = function()
     Job.preloadedPeds = {}
     Citizen.CreateThread(function() 
         print('Job', 'Preload Begin')
+
+        -- Spawn passenger
         for i,destination in pairs(stop.passengers) do
             -- TODO: Randomise a bit where they spawn
             
@@ -247,12 +254,20 @@ Job.DisembarkPassengers = function(callback)
         end
     end
 
+    local disembarkAttempts = 100
+
     -- Wait for them to leave
     while not Bus.CheckPassengersDisembarked(function(passenger) 
         -- Tell the ped to wander around. We dont care.
         Ped.WanderAway(passenger.ped)
-    end) do Citizen.Wait(100) end
+    end) and disembarkAttempts >=0 do 
+        disembarkAttempts = disembarkAttempts - 1
+        Citizen.Wait(100) 
+    end
     
+    -- Cull the shits that wont leave
+    Bus.Cull()
+
     -- Finally callback
     print('Job', 'Passengers left')
     if callback then callback() end
@@ -289,11 +304,16 @@ end
 Job.Begin = function(callback) 
     Job.active = true
 
-    ESX.TriggerServerCallback(E.BeginJob, function(route) 
+    ESX.TriggerServerCallback(E.BeginJob, function(route, message) 
 
         -- Validate the route
         if route == nil then
-            ESX.ShowNotification('There is ~r~no~s~ routes available for you', true, true, 10)
+            if message == 'deposit' then
+                ESX.ShowNotification('You do not have enough money for the ~r~'..tomoney(Config.deposit)..'~s~ deposit', true, false, 16)
+            else
+                ESX.ShowNotification('There is ~r~no~s~ routes available for you', true, true, 10)
+            end
+
             Job.active = false
             return
         end
@@ -323,8 +343,7 @@ Job.Begin = function(callback)
 
             -- Trigger next stop
             Job.NextStop()
-
-            ESX.ShowNotification('You have started working', true, true, 10)
+            ESX.ShowNotification('You paid ~r~'..tomoney(Config.deposit)..'~s~ and started your route', true, true, 10)
             if callback then callback(route) end
         end)
     end)
@@ -335,13 +354,18 @@ Job.End = function(forfeit)
     -- Disable the active state of the job
     Job.active = false
     
-    -- Wait for the user to leave the bus
-    if forfeit then
-        ESX.ShowNotification('You have ~r~forfeited~s~ your route', true, true, 10)
-    else 
-        ESX.ShowNotification('You have ~g~completed~s~ your route', true, true, 20)
-        --TODO: Trigger Bond Repayment
-    end
+    -- Tell the server we have finished the route
+    local routeId = Job.route.id
+    if forfeit then routeId = -1 end
+    ESX.TriggerServerCallback(E.EndJob, function(success, data) 
+        if success then
+            print('payed out for the route')
+            ESX.ShowNotification('You have earned ~g~'..tomoney(data)..'~s~ from your route (inc. deposit)', true, true, 20)
+        else
+            print('failed to payout for the route', data)
+            ESX.ShowNotification('You have ~r~forfeited~s~ your route. Your depost has been lost.', true, true, 10)
+        end
+    end, routeId)
 
     -- Finally clear the route
     Bus.Destroy()

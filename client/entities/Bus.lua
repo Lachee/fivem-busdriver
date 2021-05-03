@@ -171,6 +171,18 @@ Bus.CheckPassengersDisembarked = function(callback)
     return true
 end
 
+-- Removes sticky shits
+Bus.Cull = function()
+    Bus.passengers = table.filter(Bus.passengers, function(o, k, i)
+        if o.isLeaving then
+            print('removing sticky shit ', o.ped)
+            Ped.Remove(o.ped)
+            return false
+        end
+        return true
+    end)
+end
+
 -- Gets the passenger
 Bus.GetPassenger = function(index) 
     if index < 1 or index > #Bus.passengers then

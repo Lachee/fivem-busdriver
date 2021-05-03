@@ -10,6 +10,7 @@ Citizen.CreateThread(function()
                 ESX = library
                 BusStop.RegisterEvents(ESX)
                 Route.RegisterEvents(ESX)
+                EnsureJob(ESX.PlayerData)
             end)
             
             Citizen.Wait(0)
@@ -20,6 +21,7 @@ end)
 -- Ensures the job blip
 local blip = nil
 function EnsureJob(playerData)
+    if playerData == nil then return end 
     local jobName = playerData.job.name
     if jobName == 'busdriver' then
         if blip ~= nil then
@@ -62,12 +64,21 @@ end)
 
 function OnJobMarker() 
     if Job.active then
-        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~r~forfeit~s~ your route and lose your bond.")
-        if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-            Job.End(true)
+
+        -- This is technically bugged. Means you can walk home without your bus
+        if Job.isRouteFinished then
+            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~g~finish~s~ your route", true, false)
+            if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
+                Job.End(false)
+            end
+        else
+            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~r~forfeit~s~ your route and lose your bond.", true, false)
+            if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
+                Job.End(true)
+            end
         end
     else
-        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to begin a route.", true)
+        ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to begin a route.", true, false)
         if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
             Job.Begin()
         end
@@ -75,11 +86,15 @@ function OnJobMarker()
 end
 
 function OnBusMarker() 
-    ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to leave the bus and finish your route.")
- 
+    if Job.isRouteFinished then
+        ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to ~g~finish~s~ your route", true, false)
+    else
+        ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to ~r~forfeit~s~ your route and lose your bond.", true, false)
+    end
+
     -- Wait for the bed to leave the vehicle
     if not IsPedInVehicle(PlayerPedId(), Bus.current, true) then
-        Job.End(false)
+        Job.End(Job.isRouteFinished == false)
     end
 end
 
@@ -97,11 +112,7 @@ Citizen.CreateThread(function()
         local coords    = GetEntityCoords(PlayerPedId())
         local vehicle   = GetVehiclePedIsIn(PlayerPedId(), true) 
         local distance  = GetDistanceBetweenCoords(coords, Config.coordinates, false)
-
-        -- Run the job
-        if Job.active then
-            Job.Process()
-        end
+        local onMarker = false
 
         -- Draw the bus return marker
         if vehicle ~= nil and vehicle == Bus.current then
@@ -109,16 +120,28 @@ Citizen.CreateThread(function()
             if distance < 1.5 then
                 BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
                 OnBusMarker()
+                onMarker = true
+            else
+                -- Draw where to park the bus
+                BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 200, 100, 0 })
             end
         else 
             -- Draw the job marker
             if distance < 1.5 then
                 DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 255, 0, 0 })
                 OnJobMarker()
+                onMarker = true
             else
                 DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 200, 100, 0 })
             end
         end
+
+        
+        -- Run the job
+        if not onMarker and Job.active then
+            Job.Process()
+        end
+
     end
 end)
 
@@ -129,6 +152,7 @@ if Config.debug then
         local frame = 0;
         while true do
             Citizen.Wait(5)
+            BusStop.RenderAll()
             if DEBUG_FindStops then
                 frame = frame + 1
                 local radius = 15.0

@@ -170,3 +170,9 @@ CreateBlip = function(sprite, coords, name, scale, color)
     EndTextCommandSetBlipName(blip)
     return blip
 end
+
+-- Uses ESX to create a monitary display
+function tomoney(value)
+    if value == nil then return '$0' end
+    return '$' .. tostring(ESX.Math.GroupDigits(value))
+end
