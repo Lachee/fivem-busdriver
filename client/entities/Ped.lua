@@ -122,7 +122,7 @@ Ped.NavigateTo = function(ped, coords, speed, withinRange, timeout)
         SetEntityCoords(ped, coords.x+.0, coords.y+.0, coords.z+.0, false, false, false, false)
     else
         print('Navigate Ped:', ped, coords, speed, withinRange, timeout)
-        TaskFollowNavMeshToCoord(ped, coords.x+.0, coords.y+.0, coords.z+.0, speed, timeout, withinRange, false)
+        TaskFollowNavMeshToCoord(ped, coords.x+.0, coords.y+.0, coords.z+.0, speed, timeout, withinRange+.0, false)
     end
 end
 
@@ -221,12 +221,7 @@ Ped.InVehicle = function(ped, vehicle, asGetIn)
         print('warning: ped was never in a vehicle')
         return false
     end
-
-    print('check', ped, vehicle)
-    local pt = GetEntityType(ped)
-    local vt = GetEntityType(vehicle)
-
-    print('result', pt, vt)
+    
     return IsPedInVehicle(ped, vehicle)
 end
 

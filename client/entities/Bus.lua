@@ -82,17 +82,12 @@ Bus.AddPassenger = function(ped, seat, teleport)
         seat = seat,
         destination = 0,
         isLeaving = false,
-        isEntering = false,
+        isEntering = true,
     }
 
-    if teleport then
-        print('Warping ped into', seat, ped)
-        psg.isEntering = false
-        TaskWarpPedIntoVehicle(ped, Bus.current, seat)
-    else
-        print('Telling ped to get in', seat, ped)
-        psg.isEntering = true
-        TaskEnterVehicle(ped, Bus.current, Config.passengerTimeout, seat, 3.0, 1, 0)
+    if not Ped.EnterVehicle(ped, Bus.current, seat, Ped.RUN) then
+        print('Bus: Failed to make ped enter bus')
+        return false
     end
 
     table.insert(Bus.passengers, psg)
@@ -102,15 +97,9 @@ end
 -- Removes a passenger, asking them nicely to get off the bus
 Bus.RemovePassenger = function(passenger, teleport)
     if teleport == nil then teleport = false end
-
     local i, psg = Bus.GetPassenger(passenger)
     psg.isLeaving = true
-
-    if teleport then
-        TaskLeaveVehicle(psg.ped, Bus.current, 16)
-    else 
-        TaskLeaveVehicle(psg.ped, Bus.current, 1)
-    end
+    Ped.ExitVehicle(psg.ped, 256, Bus.current)
 end
 
 
@@ -127,8 +116,7 @@ Bus.CheckPassengersEmbarked = function()
 
         -- TODO: CHeck if bed is dead 
 
-        local vehicle = GetVehiclePedIsIn(psg.ped, false)
-        if vehicle == nil or vehicle == 0 then
+        if not Ped.InVehicle(psg.ped, Bus.current, false) then
             return false
         end
     end
