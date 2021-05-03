@@ -50,7 +50,7 @@ Bus.FindFreeSeat = function()
     if not Bus.current then return false end
     local capacity = GetVehicleMaxNumberOfPassengers(Bus.current)
 
-    for i = 0, capacity do
+    for i = 1, capacity do
         if Bus.IsSeatFree(i) then
             return i
         end
@@ -131,8 +131,7 @@ Bus.CheckPassengersDisembarked = function(callback)
         if psg.isLeaving then
 
             -- They are no longer in the list, so remove them and check again
-            local vehicle = GetVehiclePedIsIn(psg.ped, false)
-            if vehicle == nil or vehicle == 0  then
+            if not Ped.InVehicle(psg.ped, Bus.current, false) then
                 table.remove(Bus.passengers, i)
                 if callback then callback(psg) end
                 return Bus.CheckPassengersDisembarked(callback)

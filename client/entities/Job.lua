@@ -59,7 +59,7 @@ Job.UpdateThread = function()
             if not Job.isBoarding and IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
                 Job.isBoarding = true
 
-                Bus.OpenDoors()
+                -- Bus.OpenDoors()
                 Citizen.CreateThread(function() 
                     Citizen.Wait(10)
                     ESX.ShowNotification('Disembarking Passengers...', true, false, 60)
@@ -92,15 +92,15 @@ Job.UpdateThread = function()
 
         -- We are boarding, wait
         if Job.isBoarding then
-            ESX.ShowHelpNotification('Wait for passengers', false, false, 1)
-            for _, ped in pairs(Job.boardingPeds) do
-                local coords = GetEntityCoords(ped)
+            ESX.ShowHelpNotification('Wait for passengers', true, false, 1)
+            for _, bp in pairs(Job.boardingPeds) do
+                local coords = GetEntityCoords(bp.ped)
                 DrawMarker(0, coords.x, coords.y, coords.z + 1.5, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 255, 255, 0, 1.0, false, false, 2, false)
             end
         end
     else
         -- We need to clean up
-        ESX.ShowHelpNotification('Return the bus to the ~g~depo~s', false, false, 1)
+        ESX.ShowHelpNotification('Return the bus to the ~g~depo~s', true, false, 1)
     end
 end
 
@@ -118,20 +118,21 @@ Job.PreloadPeds = function()
     if Job.preloadedPeds ~= nil then return true end
 
     -- Perform the preload
-    print('Performing Preload...')
     Job.preloadedPeds = {}
-    for i,destination in pairs(stop.passengers) do
-        -- TODO: Randomise a bit where they spawn
-        
-        local randomRadius = 50.0
-        local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
-        local checkVector = stopVector + randVector
-        local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
-        if not isSafe then spawnCoords = stopVector end
-        
+    Citizen.CreateThread(function() 
+        print('Job', 'Preload Begin')
+        for i,destination in pairs(stop.passengers) do
+            -- TODO: Randomise a bit where they spawn
+            
+            local randomRadius = 50.0
+            local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
+            local checkVector = stopVector + randVector
+            local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
+            if not isSafe then spawnCoords = stopVector end
+            
 
-        -- Spawn the ped
-        Ped.SpawnRandom(spawnCoords, function(ped)
+            -- Spawn the ped
+            local ped = Ped.SpawnRandom(spawnCoords)
             if ped ~= nil then
                 print("Ped Spawned", ped)
                 
@@ -139,8 +140,9 @@ Job.PreloadPeds = function()
                 Ped.NavigateTo(ped, stopCoords, Ped.RUN, 0.5)
                 table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
             end
-        end) 
-    end
+        end
+        print('Job', 'End')
+    end)
 
     -- We preloaded them
     return true
@@ -198,9 +200,7 @@ Job.EmbarkPassengers = function(callback)
     -- Wait till they are all on the bus
     print('Job', 'waiting for passengers to embark')
     while not Bus.CheckPassengersEmbarked() do
-        -- TODO: Nag Passengers to get on board already. This should prevent them "forgetting" they are boarding
-        
-        Citizen.Wait(100) 
+        Citizen.Wait(250) 
     end
 
     -- Finally callback
@@ -223,7 +223,7 @@ Job.DisembarkPassengers = function(callback)
     while not Bus.CheckPassengersDisembarked(function(passenger) 
         -- Tell the ped to wander around. We dont care.
         Ped.WanderAway(passenger.ped)
-    end) do Citizen.Wait(10) end
+    end) do Citizen.Wait(100) end
     
     -- Finally callback
     print('Job', 'Passengers left')
