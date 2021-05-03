@@ -59,20 +59,23 @@ Job.UpdateThread = function()
             if not Job.isBoarding and IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
                 Job.isBoarding = true
 
-                --Bus.OpenDoors()
+                Bus.OpenDoors()
                 Citizen.CreateThread(function() 
-                    Job.DepartPassengers(function() 
-                        Job.BoardPassengers(function()
-                            -- Close the door, show the notif and play a sound
-                            Bus.CloseDoors()
-                            ESX.ShowNotification('All passengers ready', true, false, 60)
-                            -- PlaySoundFromEntity(-1, "Burglar_Bell", Bus.current, "Generic_Alarms", 0, 0)
+                    Citizen.Wait(10)
+                    ESX.ShowNotification('Disembarking Passengers...', true, false, 60)
+                    Job.DisembarkPassengers()
 
-                            -- Increment the stop
-                            Job.NextStop()
-                            Job.isBoarding = false
-                        end)
-                    end)
+                    ESX.ShowNotification('Boarding Passengers...', true, false, 60)
+                    Job.EmbarkPassengers()
+
+                    -- Close the door, show the notif and play a sound
+                    Bus.CloseDoors()
+                    ESX.ShowNotification('All passengers ready', true, false, 60)
+                    -- PlaySoundFromEntity(-1, "Burglar_Bell", Bus.current, "Generic_Alarms", 0, 0)
+
+                    -- Increment the stop
+                    Job.NextStop()
+                    Job.isBoarding = false
                 end)
             end
         else
@@ -163,29 +166,29 @@ Job.NextStop = function()
 end
 
 -- Tells the passengers to get on
-Job.BoardPassengers = function(callback)
+Job.EmbarkPassengers = function(callback)
     local stop = Job.GetNextStop()
     if not stop then 
-        print('stop does not exist')
+        print('Job', 'failure: stop does not exist')
         return false 
     end
 
     -- Wait to preload the peds
-    print('Preloading Peds')
     while Job.preloadedPeds == nil do
+        print('Job', 'preloading peds')
         Job.PreloadPeds()
         Citizen.Wait(10)
     end
 
     -- Tell the passengers to get on the bus
-    print('boarding new shits')
+    print('Job', 'embarking new passengers')
     Job.boardingPeds = {}
     for i, pp in pairs(Job.preloadedPeds) do
-        local passenger = Bus.AddPassenger(pp.ped)
+        local passenger, seat = Bus.AddPassenger(pp.ped)
         if passenger ~= nil then 
             -- Set hte destination
             Bus.SetPassengerDestination(passenger, pp.destination)
-            table.insert(Job.boardingPeds, pp.ped)
+            table.insert(Job.boardingPeds, { ped = pp.ped, seat = pp.seat })
         else
             -- Tell GTA to clean this user up
             Ped.WanderAway(pp.ped)
@@ -193,22 +196,21 @@ Job.BoardPassengers = function(callback)
     end
 
     -- Wait till they are all on the bus
-    print('waiting for passenger onboard')
+    print('Job', 'waiting for passengers to embark')
     while not Bus.CheckPassengersEmbarked() do
         -- TODO: Nag Passengers to get on board already. This should prevent them "forgetting" they are boarding
+        
         Citizen.Wait(100) 
     end
 
     -- Finally callback
-    print('We are ready')
-    ESX.ShowNotification('Passengers embarked', true, false, 60)
-    callback()
-    return true
+    print('Job', 'passengers embarked')
+    if callback then callback() end
 end
 
 -- Tells the passengers to fuck off
-Job.DepartPassengers = function(callback)
-    print('kicking the lil shits off')
+Job.DisembarkPassengers = function(callback)
+    print('Job', 'Disembarking Passengers')
 
     -- Tell passengers when their destination arrived
     for i, p in pairs(Bus.passengers) do
@@ -218,16 +220,14 @@ Job.DepartPassengers = function(callback)
     end
 
     -- Wait for them to leave
-    print('waiting for them to leave')
     while not Bus.CheckPassengersDisembarked(function(passenger) 
         -- Tell the ped to wander around. We dont care.
         Ped.WanderAway(passenger.ped)
     end) do Citizen.Wait(10) end
     
     -- Finally callback
-    print('everyone off')
-    ESX.ShowNotification('Passengers disembarked', true, false, 60)
-    callback()
+    print('Job', 'Passengers left')
+    if callback then callback() end
 end
 
 -- Sets the waypoint to the current stop

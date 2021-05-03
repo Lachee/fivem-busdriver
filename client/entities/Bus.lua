@@ -91,7 +91,7 @@ Bus.AddPassenger = function(ped, seat, teleport)
     end
 
     table.insert(Bus.passengers, psg)
-    return #Bus.passengers
+    return #Bus.passengers, seat
 end
 
 -- Removes a passenger, asking them nicely to get off the bus

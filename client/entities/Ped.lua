@@ -154,7 +154,7 @@ Ped.EnterVehicle = function(ped, vehicle, seat, speed, timeout, priority)
 
     -- Clear the ped's previous task
     if priority then
-        --ClearPedTasksImmediately(ped) 
+        ClearPedTasksImmediately(ped) 
     end
 
     -- Tell them to get in the damn car
