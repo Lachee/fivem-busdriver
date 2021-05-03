@@ -9,6 +9,7 @@ Citizen.CreateThread(function()
             TriggerEvent("esx:getSharedObject", function(library)
                 ESX = library
                 BusStop.RegisterEvents(ESX)
+                Route.RegisterEvents(ESX)
             end)
             
             Citizen.Wait(0)
