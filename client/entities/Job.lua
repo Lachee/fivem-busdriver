@@ -44,7 +44,7 @@ Job.UpdateThread = function()
         end
 
         if Job.canLoadPassengers then
-            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors")
+            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors", true, false)
             
             -- Disable the control
             DisableControlActions(0, {
@@ -71,7 +71,6 @@ Job.UpdateThread = function()
                     -- Close the door, show the notif and play a sound
                     Bus.CloseDoors()
                     ESX.ShowNotification('All passengers ready', true, false, 60)
-                    -- PlaySoundFromEntity(-1, "Burglar_Bell", Bus.current, "Generic_Alarms", 0, 0)
 
                     -- Increment the stop
                     Job.NextStop()

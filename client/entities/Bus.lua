@@ -114,8 +114,14 @@ end
 Bus.CheckPassengersEmbarked = function() 
     for i, psg in pairs(Bus.passengers) do
 
-        -- TODO: CHeck if bed is dead 
+        -- If the ped is dead, then remove them from our list and tell GTA to clean them up
+        if Ped.IsDead(psg.ped) then
+            Ped.Remove(psg.ped)
+            table.remove(Bus.passengers, i)
+            return Bus.CheckPassengersEmbarked()
+        end
 
+        -- If the ped is not in the bus yet, abort
         if not Ped.InVehicle(psg.ped, Bus.current, false) then
             return false
         end
@@ -130,8 +136,13 @@ Bus.CheckPassengersDisembarked = function(callback)
     for i, psg in pairs(Bus.passengers) do
         if psg.isLeaving then
 
+            -- Get the passenger states
+            local inVehicle =  Ped.InVehicle(psg.ped, Bus.current, false)
+            local isDead = Ped.IsDead(psg.ped)
+
             -- They are no longer in the list, so remove them and check again
-            if not Ped.InVehicle(psg.ped, Bus.current, false) then
+            if not inVehicle or isDead then
+                if isDead then Ped.Remove(psg.ped) end
                 table.remove(Bus.passengers, i)
                 if callback then callback(psg) end
                 return Bus.CheckPassengersDisembarked(callback)
