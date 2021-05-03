@@ -48,8 +48,10 @@ end
 
 -- Renders the stops
 BusStop.RenderAll = function()
-    for k, stop in pairs(BusStop.Stops) do
-        BusStop.Render(stop)
+    if Config.alwaysRenderStops then
+        for k, stop in pairs(BusStop.Stops) do
+            BusStop.Render(stop)
+        end
     end
 end
 
@@ -81,7 +83,7 @@ BusStop.DrawZone = function(coordinate, heading, color)
     if hasGround then 
         position.z = groundZ - depth
         
-        if Config.debug then
+        if Config.debug and DEBUG_FindStops then
             local qHeading = quat(heading, vector3(0, 0, 1))
             DrawQuaternion(coordinate, qHeading, {r=255, g=0, b=0})
             

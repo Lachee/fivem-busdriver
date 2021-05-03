@@ -9,6 +9,9 @@ Controls = {
     INPUT_VEH_CIN_CAM = 80,
     INPUT_VEH_NEXT_RADIO = 81,
     INPUT_VEH_PREV_RADIO = 82,
+    INPUT_VEH_ACCELERATE = 71,
+    INPUT_VEH_BRAKE = 72,
+    
 
     INPUT_CONTEXT = 51,             -- E
     INPUT_CONTEXT_SECONDARY = 52,   -- Q

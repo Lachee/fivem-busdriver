@@ -169,15 +169,15 @@ if Config.debug then
 
     -- Registers a particular bus stop at the players location
     RegisterCommand('find_stops', function(source, args, rawCommand)
-        if FindStops then 
-            FindStops = false
+        if DEBUG_FindStops then 
+            DEBUG_FindStops = false
         else
-            FindStops = true
+            DEBUG_FindStops = true
         end
 
         TriggerEvent('chat:addMessage', {
             template = 'Find stops has been toggled to {0}',
-            args = {  FindStops }
+            args = {  DEBUG_FindStops }
         });
     end)
 end

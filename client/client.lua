@@ -1,4 +1,6 @@
 
+DEBUG_FindStops = false
+
 -- Load up the ESX. Its a single line cause im a lazy git and prefer it this way
 ESX = nil
 Citizen.CreateThread(function()
@@ -80,18 +82,15 @@ Citizen.CreateThread(function()
 
         -- Run the job
         if Job.active then
-            Job.UpdateThread()
+            Job.Process()
         end
 
         -- Draw the bus return marker
-        -- TODO: Check if player is in same bus
         if vehicle ~= nil and vehicle == Bus.current then
             distance = GetDistanceBetweenCoords(GetEntityCoords(vehicle), Config.coordinates, false)
             if distance < 1.5 then
                 BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
                 OnBusMarker()
-            else
-                BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 200, 100, 0 })
             end
         else 
             -- Draw the job marker
@@ -101,32 +100,19 @@ Citizen.CreateThread(function()
             else
                 DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 200, 100, 0 })
             end
-        end       
+        end
     end
 end)
 
 -- Draw the debug visualisations
 if Config.debug then
-    FindStops = false
     DoorsOpen = false
     Citizen.CreateThread(function()
         local frame = 0;
         while true do
             Citizen.Wait(5)
-            frame = frame + 1
-
-            -- if Bus.current then
-            --     if Bus.doorsOpen then
-            --         ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to close doors")
-            --     else
-            --         ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open doors")
-            --     end
-            --     if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-            --         Bus.ToggleDoors()
-            --     end
-            -- end
-            
-            if FindStops then
+            if DEBUG_FindStops then
+                frame = frame + 1
                 local radius = 15.0
                 local propCoords = false
                 

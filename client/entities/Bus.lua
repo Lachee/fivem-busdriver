@@ -6,21 +6,35 @@ Bus.doorsOpen = false
 
 -- Opens the bus door
 Bus.OpenDoors = function(instant) 
-    if instant then instant = true else instant = false end   
-    if not Bus.current then return false end 
-    SetVehicleDoorOpen(Bus.current, 0, false, instant)
-    SetVehicleDoorOpen(Bus.current, 1, false, instant)
+    if instant == nil then instant = true else instant = false end   
+    if not Bus.current then return false end
+
+    for i = 1, #Bus.info.doors do
+        SetVehicleDoorOpen(Bus.current, Bus.info.doors[i], false, instant)
+    end
+
     Bus.doorsOpen = true
     return true
 end
 
 -- Closes the bus door
 Bus.CloseDoors = function(instant)
-    if instant then instant = true else instant = false end
+    if instant == nil then instant = true else instant = false end
     if not Bus.current then return false end
-    SetVehicleDoorShut(Bus.current, 0, false, instant)
-    SetVehicleDoorShut(Bus.current, 1, false, instant)
+    
+    for i = 1, #Bus.info.doors do
+        SetVehicleDoorShut(Bus.current, Bus.info.doors[i], false, instant)
+    end
+
     Bus.doorsOpen = false
+    return true
+end
+
+-- Turns the hazards either on or off
+Bus.SetHazards = function(state) 
+    if Bus.current == nil then print('cannot set hazards on a nil bus') return false end
+    SetVehicleIndicatorLights(Bus.current, 0, state)
+    SetVehicleIndicatorLights(Bus.current, 1, state)
     return true
 end
 
@@ -205,12 +219,13 @@ Bus.Destroy = function(callback)
     return false
 end
 
-
+-- Gets meta information about a particular bus for the specified route type
 Bus.GetBusInfoFromRoute = function(routeType)
-    if routeType == 'metro' then     return { type = routeType, model = 'bus', capacity = 16 } end
-    if routeType == 'rural' then     return { type = routeType, model = 'coach', capacity = 16 } end
-    if routeType == 'terminal' then  return { type = routeType, model = 'airbus', capacity = 16 } end
-    if routeType == 'party' then     return { type = routeType, model = 'pbus2', capacity = 5 } end
-    if routeType == 'tour' then      return { type = routeType, model = 'tourbus', capacity = 5 } end
+    if routeType == 'metro' then     return { type = routeType, model = 'bus', capacity = 15, doors = {0, 1, 2, 3 }} end
+    if routeType == 'terminal' then  return { type = routeType, model = 'airbus', capacity = 15, doors = {0, 1, 2, 3 }} end
+    if routeType == 'rural' then     return { type = routeType, model = 'coach', capacity = 9, doors = { 0 } } end
+    if routeType == 'party' then     return { type = routeType, model = 'pbus2', capacity = 9, doors = { 0 }  } end
+    if routeType == 'tour' then      return { type = routeType, model = 'tourbus', capacity = 8, doors = { 2, 3 }} end
+    if routeType == 'rental' then    return { type = routeType, model = 'rentalbus', capacity = 8, doors = { 2, 3 }} end
     return nil
 end

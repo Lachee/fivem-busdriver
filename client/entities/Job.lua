@@ -3,47 +3,61 @@ Job = {}
 Job.active = false
 Job.route = nil
 Job.nextStop = 1
-Job.canLoadPassengers = false
+Job.canBoardPassengers = false
 Job.preloadedPeds = nil
 Job.boardingPeds = nil
 Job.isBoarding = false
 Job.isRouteFinished = false
 
 -- Internal update loop
-Job.UpdateThread = function() 
+Job.Process = function() 
     if not Job.active then return end
 
     local stop = Job.GetNextStop()
     if stop ~= nil then
-        -- Perform the GPS
-        -- Set the GPS
-        
         -- Check if the bus is on it
         if Bus.current == nil then
             ESX.ShowHelpNotification("Get back into your bus.")
             return
         end
         
+        -- Determine how far away we are
         local stopCoords = vector3(stop.x+.0, stop.y+.0, stop.z+.0)
         local coords = GetEntityCoords(Bus.current)
         local heading = GetEntityHeading(Bus.current)
         local distance = GetDistanceBetweenCoords(coords, stopCoords, false)
         local headingDiff = (heading - stop.heading + 180 + 360) % 360 - 180
-        Job.canLoadPassengers = false    
 
         -- Determine if we can preload
         if distance <= Config.passengerRadius then
             Job.PreloadPeds()
         end
 
+        -- We are not boarding and we are not in a spot that can board passengers. Tell the user to go to the stop
+        if Job.isBoarding then
+            -- We are boarding, so keep the controls disabled and the hazards on
+            Bus.SetHazards(true)
+            DisableControlActions(0, {
+                Controls.INPUT_VEH_ACCELERATE,
+                Controls.INPUT_VEH_BRAKE
+            }, true)
+        else
+            -- We are not boarding, display the help notification
+            local stopName = '~y~'.. stop.id .. '~s~ | ~y~' .. stop.name .. '~s~'
+            ESX.ShowHelpNotification('Drive to ' .. stopName, true, false)
+        end
+
+
         -- Determine if we can pickup passengers
+        Job.canBoardPassengers = false
         if distance <= Config.stopDistanceLimit then
             if headingDiff <= Config.stopHeadingLimit and headingDiff >= -Config.stopHeadingLimit then
-                Job.canLoadPassengers = true
+                Job.canBoardPassengers = true
             end
         end
 
-        if Job.canLoadPassengers then
+        -- If we can board passengers
+        if Job.canBoardPassengers then
             ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors", true, false)
             
             -- Disable the control
@@ -56,25 +70,36 @@ Job.UpdateThread = function()
                 Controls.INPUT_VEH_PREV_RADIO,
             } , true)
 
+            -- We are not boarding and we pressed the board button, we should perform the board logic
             if not Job.isBoarding and IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
                 Job.isBoarding = true
-
-                -- Bus.OpenDoors()
                 Citizen.CreateThread(function() 
-                    Citizen.Wait(10)
+  
                     ESX.ShowNotification('Disembarking Passengers...', true, false, 60)
                     Job.DisembarkPassengers()
+
+                    -- Opening doors bugs out the AI
+                    -- Bus.OpenDoors()
+                    -- Citizen.Wait(150)
 
                     ESX.ShowNotification('Boarding Passengers...', true, false, 60)
                     Job.EmbarkPassengers()
 
                     -- Close the door, show the notif and play a sound
                     Bus.CloseDoors()
+                    Citizen.Wait(150)
                     ESX.ShowNotification('All passengers ready', true, false, 60)
 
                     -- Increment the stop
                     Job.NextStop()
                     Job.isBoarding = false
+                    Bus.SetHazards(false)
+
+                    -- Enable controls if we are no longer boarding
+                    EnableControlActions(0, {
+                        Controls.INPUT_VEH_ACCELERATE,
+                        Controls.INPUT_VEH_BRAKE
+                    }, true)
                 end)
             end
         else
@@ -87,19 +112,26 @@ Job.UpdateThread = function()
                 Controls.INPUT_VEH_NEXT_RADIO,
                 Controls.INPUT_VEH_PREV_RADIO,
             } , true)
+
         end
 
+        -- Draw the bus zone
+        BusStop.DrawZone(stop, stop.heading, Config.stopColor)
+
+        
         -- We are boarding, wait
         if Job.isBoarding then
             ESX.ShowHelpNotification('Wait for passengers', true, false, 1)
             for _, bp in pairs(Job.boardingPeds) do
-                local coords = GetEntityCoords(bp.ped)
-                DrawMarker(0, coords.x, coords.y, coords.z + 1.5, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 255, 255, 0, 1.0, false, false, 2, false)
+                if not Ped.InVehicle(bp.ped) then
+                    local coords = GetEntityCoords(bp.ped)
+                    DrawMarker(0, coords.x, coords.y, coords.z + 1.5, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 255, 255, 0, 1.0, false, false, 2, false)
+                end
             end
         end
     else
         -- We need to clean up
-        ESX.ShowHelpNotification('Return the bus to the ~g~depo~s', true, false, 1)
+        ESX.ShowHelpNotification('Return the bus to the ~y~depo', true, false, 1)
     end
 end
 
@@ -140,7 +172,7 @@ Job.PreloadPeds = function()
                 table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
             end
         end
-        print('Job', 'End')
+        print('Job', 'Preload End')
     end)
 
     -- We preloaded them
@@ -149,9 +181,6 @@ end
 
 -- Goes to the next stop
 Job.NextStop = function() 
-    print('going to next stop')
-    ESX.ShowHelpNotification('Go to the next stop', false, true, 5.0)
-
     -- Increment and set waypoint
     Job.nextStop = Job.nextStop + 1
     Job.SetWaypoint()
@@ -175,11 +204,11 @@ Job.EmbarkPassengers = function(callback)
     end
 
     -- Wait to preload the peds
-    while Job.preloadedPeds == nil do
-        print('Job', 'preloading peds')
-        Job.PreloadPeds()
-        Citizen.Wait(10)
-    end
+    -- while Job.preloadedPeds == nil do
+    --     print('Job', 'preloading peds')
+    --     Job.PreloadPeds()
+    --     Citizen.Wait(10)
+    -- end
 
     -- Tell the passengers to get on the bus
     print('Job', 'embarking new passengers')
