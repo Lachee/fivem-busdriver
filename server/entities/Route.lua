@@ -18,29 +18,40 @@ Route.GetRoute = function(routeId, callback)
         -- Prepare the route details and get all the responses
         local routeDetail = results[1]
         local stop_ids = json.decode(routeDetail.route)
-        BusStop.GetStops(stop_ids, function(stops)
+        BusStop.GetStops(stop_ids, function(results)
 
-            -- Determine the order of the routes
-            for _,s in pairs(stops) do
-                s.order = table.indexOf(stop_ids, s.id)
-            end
+            -- Prepare a list of stops
+            local stops = {}
+            local stopCount = #stop_ids
+            
+            for i, id in pairs(stop_ids) do
+                for _, stop in pairs(results) do
+                    if stop.id == id then
 
-            -- Sort the routes
-            table.sort(stops, function(a, b) return a.order < b.order end)
-            routeDetail.stops = stops
+                        -- Clone and determine the order
+                        local clone = deepcopy(stop)
+                        clone.order = i
 
-            -- Add the number of passengers that plan to get on for each route and where they will get off.
-            for i, s in pairs(stops) do
-                s.passengers = {}
-                if i ~= #stops then
-                    local count = math.random(1, 3)
-                    for k = 1, count do
-                        local destination = math.random(i+1, #stops)
-                        table.insert(s.passengers, destination)
+                        -- Populate passenger count
+                        clone.passengers = {}
+                        if i ~= stopCount then
+                            local count = math.random(1, 3)
+                            for k = 1, count do
+                                local destination = math.random(i+1, stopCount)
+                                table.insert(clone.passengers, destination)
+                            end
+                        end
+
+                        -- Add to our table
+                        table.insert(stops, clone)
+                        break
                     end
                 end
             end
             
+            -- Set the stops
+            routeDetail.stops = stops
+
             -- Give back the results
             if callback ~= nil then callback(routeDetail) end
         end)

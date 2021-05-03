@@ -33,6 +33,14 @@ Job.Process = function()
             Job.PreloadPeds()
         end
 
+        -- Cull any vehicles on the spot
+        if distance <= 25.0 and stop.clear > 0.0 then
+            -- TODO: Text Owners that their vehicle was deleted because it was illegal
+            -- parked in a bus stop
+            ClearVehiclesInArea(vector3(stop.x, stop.y, stop.z), stop.clear + .0)
+            stop.clear = 0
+        end
+
         -- Determine if we can pickup passengers
         Job.canBoardPassengers = false
         if distance <= Config.stopDistanceLimit then
@@ -54,6 +62,11 @@ Job.Process = function()
             if not Job.canBoardPassengers then
                 local stopName = '~y~'.. stop.id .. '~s~ | ~y~' .. stop.name .. '~s~'
                 ESX.ShowHelpNotification('Drive to ' .. stopName, true, false)
+
+                -- Close the damn doors
+                if not IsVehicleStopped(Bus.current) then
+                    Bus.CloseDoors()
+                end
             end
         end
 
@@ -91,9 +104,9 @@ Job.Process = function()
 
                     -- Close the door, show the notif and play a sound
                     
-                    Citizen.Wait(150)
+                    Citizen.Wait(1000)
                     Bus.CloseDoors()
-                    Citizen.Wait(250)
+                    Citizen.Wait(500)
                     ESX.ShowNotification('All passengers ready', true, false, 60)
 
                     -- Increment the stop
@@ -134,10 +147,13 @@ Job.Process = function()
                 end
             end
         end
-    else
+    end
+    
+    if Job.isRouteFinished then
         -- We need to clean up
         ESX.ShowHelpNotification('Return the bus to the ~y~depo', true, false)
     end
+    
 end
 
 -- Loads all the passengers if able
@@ -333,7 +349,7 @@ Job.Begin = function(callback)
         -- Spawn a bus
         Bus.Create(route.type, Config.coordinates, function(bus) 
             if bus == nil then 
-                Job.End(false) 
+                Job.End(false, true) 
                 ESX.ShowNotification('~r~Your bus failed to spawn for some reason', true, true, 10)
                 return 
             end
@@ -350,22 +366,46 @@ Job.Begin = function(callback)
 end
 
 -- Ends the job
-Job.End = function(forfeit) 
+Job.End = function(isForfeit, hasReturnedBus) 
     -- Disable the active state of the job
     Job.active = false
     
-    -- Tell the server we have finished the route
-    local routeId = Job.route.id
-    if forfeit then routeId = -1 end
+    -- Calculate the route state
+    local routeState = 0
+    if hasReturnedBus then routeState = routeState + 1 end
+    if not isForfeit then routeState = routeState + 2 end
+
+    print('Ending Job', Job.route.id, routeState)
     ESX.TriggerServerCallback(E.EndJob, function(success, data) 
-        if success then
-            print('payed out for the route')
-            ESX.ShowNotification('You have earned ~g~'..tomoney(data)..'~s~ from your route (inc. deposit)', true, true, 20)
-        else
+        -- Something fucky happened
+        if not success then
             print('failed to payout for the route', data)
-            ESX.ShowNotification('You have ~r~forfeited~s~ your route. Your depost has been lost.', true, true, 10)
+            ESX.ShowNotification('Something went ~r~wrong~s~', true, true, 10)
+            return
         end
-    end, routeId)
+
+        print('result', success, data)
+
+        -- Alert the notification
+        if routeState == RouteState.ForfeitWithoutVehicle then
+            ESX.ShowNotification('You ~r~forfeited~s~ the route and the deposit', true, true, 10)
+        end
+        if routeState == RouteState.ForfeitWithVehicle then
+            ESX.ShowNotification('You ~r~forfeited~s~ the route. Your deposit was ~g~returned', true, true, 10)
+        end
+        if routeState == RouteState.FinishedWithoutVehicle then
+            ESX.ShowNotification('You ~g~completed~s~ the route, but ~r~forfeited~s~ your deposit', true, true, 10)
+        end        
+        if routeState == RouteState.FinishedWithVVehicle then
+            ESX.ShowNotification('You ~g~completed~s~ the route. Your deposit was ~g~returned', true, true, 10)
+        end
+
+        -- Show we were paid
+        if data > 0 then
+            ESX.ShowNotification('You were paid ~g~' .. tomoney(data), true, true, 10)
+        end
+
+    end, Job.route.id, routeState)
 
     -- Finally clear the route
     Bus.Destroy()

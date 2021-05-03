@@ -172,7 +172,25 @@ CreateBlip = function(sprite, coords, name, scale, color)
 end
 
 -- Uses ESX to create a monitary display
-function tomoney(value)
+tomoney = function(value)
+    if ESX == nil then print('tomoney requires ESX') return '$' .. tostring(value) end
     if value == nil then return '$0' end
     return '$' .. tostring(ESX.Math.GroupDigits(value))
+end
+
+-- Cleans up any vehicles within the given coordinates safely
+-- This requires ESX because GetAllVehicles() doesn't work in Lua yet
+ClearVehiclesInArea = function(coords, radius)
+    if ESX == nil then print('ClearVehiclesInArea requires ESX') return false end
+    local vehicles = ESX.Game.GetVehiclesInArea(coords, radius)
+    local deleted = {}
+    for _, v in pairs(vehicles) do
+        -- Delete the vehicle
+        if ESX.Game.IsVehicleEmpty(v) then
+            local property = ESX.Game.GetVehicleProperties(v)
+            table.insert(deleted, deleted.plate)
+            ESX.Game.DeleteVehicle(v)
+        end
+    end
+    return deleted
 end

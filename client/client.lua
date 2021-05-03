@@ -67,14 +67,14 @@ function OnJobMarker()
 
         -- This is technically bugged. Means you can walk home without your bus
         if Job.isRouteFinished then
-            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~g~finish~s~ your route", true, false)
+            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~g~finish~s~ your route and ~r~forfeit~s~ your bond.", true, false)
             if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-                Job.End(false)
+                Job.End(false, false)
             end
         else
-            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~r~forfeit~s~ your route and lose your bond.", true, false)
+            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to ~r~forfeit~s~ your route and your bond.", true, false)
             if IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
-                Job.End(true)
+                Job.End(true, false)
             end
         end
     else
@@ -89,12 +89,12 @@ function OnBusMarker()
     if Job.isRouteFinished then
         ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to ~g~finish~s~ your route", true, false)
     else
-        ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to ~r~forfeit~s~ your route and lose your bond.", true, false)
+        ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to ~r~forfeit~s~ your route", true, false)
     end
 
     -- Wait for the bed to leave the vehicle
     if not IsPedInVehicle(PlayerPedId(), Bus.current, true) then
-        Job.End(Job.isRouteFinished == false)
+        Job.End(Job.isRouteFinished == false, true)
     end
 end
 

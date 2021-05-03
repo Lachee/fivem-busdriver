@@ -21,7 +21,7 @@ table.filter = function(t, filterIter)
   
 	return out
   end
-  
+
 local rad2Deg = math.rad2Deg
 local pi = math.pi
 local half_pi = pi * 0.5
@@ -79,4 +79,19 @@ function SanitizeEuler(euler, mul)
 		euler.z = euler.z + two_pi
 	end
     return vector3(euler.x * mul, euler.y * mul, euler.z * mul)
+end
+
+function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end

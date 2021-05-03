@@ -31,6 +31,7 @@ TriggerEvent("esx:getSharedObject", function(library)
             Route.GetRandomRoute(type, function(route)
                 -- Store the route the user is doing
                 playerRoutes[xPlayer.getIdentifier()] = route.id
+                print(ESX.DumpTable(playerRoutes))
                 callback(route)
             end)
         else
@@ -40,23 +41,37 @@ TriggerEvent("esx:getSharedObject", function(library)
     end)
 
     -- End handling the job
-    ESX.RegisterServerCallback(E.EndJob, function(source, callback, routeId)
+    ESX.RegisterServerCallback(E.EndJob, function(source, callback, routeId, state)
         local xPlayer = ESX.GetPlayerFromId(source)
 
         -- Validate the route matches
         local prevRouteId = playerRoutes[xPlayer.getIdentifier()]
         playerRoutes[xPlayer.getIdentifier()] = nil
 
-        if previousRouteId ~= routeId then
+        if prevRouteId ~= routeId then
+            print('user route', previousRouteId, routeId)
             callback(false, 'You were not doing this route')
             return
         end
 
+
         -- Get the route they are doing
-        Route.GetRoute(routeId, function(route) 
-            -- Add the money + the deposity required to spawn that bus
-            xPlayer.addMoney(route.earning + Config.deposit)
-            callback(true, route.earning)
+        Route.GetRoute(routeId, function(route)
+            
+            local earning = 0
+
+            -- Add back the deposit
+            if state == RouteState.ForfeitWithVehicle or state == RouteState.FinishedWithVehicle then
+                earning = earning + Config.deposit
+            end
+            
+            -- Pay them for the route
+            if state == RouteState.FinishedWithoutVehicle or state == RouteState.FinishedWithVehicle then
+                earning = earning + route.earning
+            end
+
+            xPlayer.addMoney(earning)
+            callback(true, earning)
         end)
     end)
 end)

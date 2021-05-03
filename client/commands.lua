@@ -2,6 +2,21 @@
 
 if Config.debug then
 
+    RegisterCommand('ldv', function(source, args, rawCommand)
+        if #args ~= 1 then
+            print('Please give a range')
+            TriggerEvent('chat:addMessage', {
+                template = 'Please give a range',
+                args = { }
+            });
+            return
+        end
+
+        local range = tonumber(args[1])
+        local coords = GetEntityCoords(GetPlayerPed(source))
+        ClearVehiclesInArea(coords, range)
+    end)
+
     RegisterCommand('ped', function(source, args, rawCommand)
             
         local coords = GetEntityCoords(GetPlayerPed(source))
