@@ -70,47 +70,35 @@ Bus.IsSeatFree = function(seat)
 end
 
 -- Adds the passenger to the seat. By default it will ask them to enter the vehicle nicely
-Bus.AddPassenger = function(ped, seat, teleport)
+Bus.AddPassenger = function(ped, seat)
     if not Bus.current then return false end
-    if teleport == nil then teleport = false end
     if seat == nil then seat = Bus.FindFreeSeat() end
     if seat == false then print('not enough seats available') return false end
     if ped == nil then print('The ped is null') return false end    
    
+    if not Ped.EnterVehicle(ped, Bus.current, seat, Ped.RUN, nil, true) then
+        print('failed to get ped to enter vehicle')
+        return false
+    end
+    
     local psg = {
         ped = ped, 
         seat = seat,
         destination = 0,
         isLeaving = false,
-        isEntering = false,
     }
 
-    if teleport then
-        print('Warping ped into', seat, ped)
-        psg.isEntering = false
-        TaskWarpPedIntoVehicle(ped, Bus.current, seat)
-    else
-        print('Telling ped to get in', seat, ped)
-        psg.isEntering = true
-        TaskEnterVehicle(ped, Bus.current, Config.passengerTimeout, seat, 3.0, 1, 0)
-    end
-
+    -- Insert the passenger
     table.insert(Bus.passengers, psg)
     return #Bus.passengers
 end
 
 -- Removes a passenger, asking them nicely to get off the bus
-Bus.RemovePassenger = function(passenger, teleport)
+Bus.RemovePassenger = function(passenger)
     if teleport == nil then teleport = false end
-
     local i, psg = Bus.GetPassenger(passenger)
     psg.isLeaving = true
-
-    if teleport then
-        TaskLeaveVehicle(psg.ped, Bus.current, 16)
-    else 
-        TaskLeaveVehicle(psg.ped, Bus.current, 1)
-    end
+    Ped.ExitVehicle(ped, 1, Bus.current)
 end
 
 

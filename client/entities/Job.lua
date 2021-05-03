@@ -128,17 +128,9 @@ Job.PreloadPeds = function()
         
 
         -- Spawn the ped
-        SpawnRandomPed(spawnCoords, function(ped)
-            
-            print("Ped Spawned", ped)
+        Ped.SpawnRandom(spawnCoords, function(ped)
             table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
-
-            Citizen.Wait(100)
-            TaskFollowNavMeshToCoord(ped, stopCoords.x, stopCoords.y, stopCoords.z, 2.0, -1, 1.0, false)
-
-            --TaskWanderInArea(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, 5.0, 0.1, 5.0)
-            --TaskWanderStandard(ped, 0, 0)
-            --Citizen.Wait(1000)
+            Ped.NavigateTo(ped, stopCoords, Ped.RUN, 0.5)
         end) 
     end
 
@@ -190,9 +182,8 @@ Job.BoardPassengers = function(callback)
             Bus.SetPassengerDestination(passenger, pp.destination)
             table.insert(Job.boardingPeds, pp.ped)
         else
-            -- Tell GTA to clean this user up
-            TaskWanderStandard(pp.ped, 10.0, 10)
-            RemovePedElegantly(pp.ped)
+            -- Cleanup the ped
+            Ped.WanderAway(ped)
         end
     end
 
@@ -225,8 +216,7 @@ Job.DepartPassengers = function(callback)
     print('waiting for them to leave')
     while not Bus.CheckPassengersDisembarked(function(passenger) 
         -- Tell the ped to wander around. We dont care.
-        TaskWanderStandard(passenger.ped, 10.0, 10)
-        RemovePedElegantly(passenger.ped)
+        Ped.WanderAway(passenger.ped)
     end) do Citizen.Wait(10) end
     
     -- Finally callback
@@ -295,7 +285,7 @@ Job.Begin = function(callback)
                 return 
             end
 
-            TaskWarpPedIntoVehicle(PlayerPedId(), bus, -1)
+            Ped.EnterVehicle(PlayerPedId(), bus, -1, Ped.TELEPORT)
             Citizen.Wait(10)
 
             -- Trigger next stop
