@@ -198,7 +198,7 @@ end
 -- Creates a bus object
 Bus.Create = function(type, coordsHeading, callback)
     -- Destroy the previous bus?
-    if Bus.Destroy then
+    if Bus.Destroy() then
         ESX.ShowNotification('Previous bus was ~r~destroyed', true, true, 10)
     end
 

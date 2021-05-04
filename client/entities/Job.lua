@@ -34,7 +34,7 @@ Job.Process = function()
         end
 
         -- Cull any vehicles on the spot
-        if distance <= 25.0 and stop.clear > 0.0 then
+        if distance <= 100.0 and stop.clear > 0.0 then
             -- TODO: Text Owners that their vehicle was deleted because it was illegal
             -- parked in a bus stop
             ClearVehiclesInArea(vector3(stop.x, stop.y, stop.z), stop.clear + .0)
@@ -381,7 +381,7 @@ Job.End = function(isForfeit, hasReturnedBus)
             return
         end
 
-        print('result', success, data)
+        print('Finished Results:', success, data)
 
         -- Alert the notification
         if routeState == RouteState.ForfeitWithoutVehicle then
@@ -393,7 +393,7 @@ Job.End = function(isForfeit, hasReturnedBus)
         if routeState == RouteState.FinishedWithoutVehicle then
             ESX.ShowNotification('You ~g~completed~s~ the route, but ~r~forfeited~s~ your deposit', true, true, 10)
         end        
-        if routeState == RouteState.FinishedWithVVehicle then
+        if routeState == RouteState.FinishedWithVehicle then
             ESX.ShowNotification('You ~g~completed~s~ the route. Your deposit was ~g~returned', true, true, 10)
         end
 

@@ -157,5 +157,12 @@ if Config.debug then
     })
 
     -- Sets the queue spot of the bus stop
+    RegisterCommand('set_queue', function(source, args, rawCommand)
+        if #args ~= 1 then
+            TriggerEvent('chat:addMessage', { template = '~r~Need to have the ID of the stop', });
+            return
+        end
 
+        
+    end)
 end
