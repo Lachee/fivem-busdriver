@@ -32,7 +32,7 @@ TriggerEvent("esx:getSharedObject", function(library)
                 -- Store the route the user is doing
                 playerRoutes[xPlayer.getIdentifier()] = route.id
                 
-                local routeValue = Route.GetEarning(route)
+                local routeValue = (Route.GetEarning(route))
                 print('player started a route.', route.id, routeValue)
                 callback(route, routeValue)
             end)

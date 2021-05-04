@@ -91,7 +91,7 @@ Route.GetEarning = function(route)
     return math.floor(
             Config.earningBase -- Base Value
             + (Route.GetDistance(route) * (route.multiplier * Config.earningPerKM)) -- KM Bonus
-            + (#route.stops + Config.earningPerStop) -- Stop Bonus
+            + (#route.stops * Config.earningPerStop) -- Stop Bonus
         ) + .0
 end
 
