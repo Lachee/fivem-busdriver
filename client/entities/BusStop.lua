@@ -2,6 +2,7 @@
 BusStop = {}
 BusStop.Models = { 'prop_busstop_05', 'prop_busstop_02', 'prop_busstop_04', 'prop_bus_stop_sign' }
 BusStop.Stops = {}
+BusStop.Size = { width = 3.5, length= 13.0 }
 
 -- Finds the nearest bus stop model with 25m.
 --  Coords is optional
@@ -10,13 +11,15 @@ BusStop.FindNearestModel = function(coords)
 end
 
 -- Requests a new stop to be created
-BusStop.RequestCreateStop = function(identifingCoordinate, stopCoordinate, heading, name, callback)
+BusStop.RequestCreateStop = function(identifingCoordinate, stopCoordinate, heading, name, queue, callback)
+    if queue == nil then queue = vector3(0, 0, 0) end
+    
     -- Send the message to the server. Once we get a call back we will log it
-    print('Requesting new bus stop', identifingCoordinate, stopCoordinate, heading, name)
+    print('Requesting new bus stop', identifingCoordinate, stopCoordinate, heading, name, queue)
     ESX.TriggerServerCallback(E.CreateBusStop, function(hash)
         BusStop.RequestAllStops()
         if callback then callback(hash) end
-    end, identifingCoordinate, stopCoordinate, heading, name)
+    end, identifingCoordinate, stopCoordinate, heading, queue, name)
 end
 
 
@@ -48,25 +51,55 @@ BusStop.RegisterEvents = function(ESX)
 end
 
 -- Renders the stops
-BusStop.RenderAll = function()
-    if Config.alwaysRenderStops then
-        for k, stop in pairs(BusStop.Stops) do
-            BusStop.Render(stop)
-        end
+BusStop.RenderAll = function(color)
+    for k, stop in pairs(BusStop.Stops) do
+        BusStop.Render(stop, color)
     end
+end
+
+-- Gets the stop coordinates
+BusStop.GetStopCoords = function(stop) 
+    if stop == nil then print('BusStop', 'warning: stop is nil') return vector3(0,0,0) end
+    return vector3(stop.x+.0, stop.y+.0, stop.z+.0)
+end
+
+-- Gets the queue coordinates
+BusStop.GetQueueCoords = function(stop) 
+    -- Prepare the queue
+    if stop == nil then print('BusStop', 'warning: stop is nil') return vector3(0,0,0) end
+    if stop.hasQueue then 
+        return vector3(stop.qx+.0, stop.qy+.0, stop.qz+.0)
+    end
+    
+    -- Find the default
+    local stopCoords = BusStop.GetStopCoords(stop)
+    local isStopSafe, safeCoords = GetSafeCoordForPed(stopCoords.x, stopCoords.y, stopCoords.z, true, 1)
+    if isStopSafe then return safeCoords end
+
+    -- Find a new spot based around the edge of the stop
+    return stopCoords
 end
 
 -- Render a specific stop. Color is optional
 BusStop.Render = function(stop, color)
     if color == nil then color = { r = 255, g = 255, b = 0 } end
     
+    -- Draw the bus zone
     BusStop.DrawZone(stop, stop.heading, color)
+
+    -- Draw the text above the bus zone
     local model = BusStop.FindNearestModel(stop)
     local textCoord = stop
     if model then textCoord = GetEntityCoords(model) end
     
     textCoord = vector3(textCoord.x+.0, textCoord.y+.0, textCoord.z+4.25)
     DrawText3D(textCoord, tostring(stop.id) .. ' | ' .. stop.name, 3)
+
+    -- Draw some debug markers
+    if Config.debug then
+        DrawHeadingMarker(BusStop.GetStopCoords(stop), stop.heading, Config.stopDistanceLimit or 1.0, color)
+        DrawGroundedZoneMarker(BusStop.GetQueueCoords(stop), 1.0, { r=255, g=0, b=0 })
+    end
 end
 
 -- Drwas a rectangular zone marker, snapped ot the ground
@@ -74,7 +107,7 @@ BusStop.DrawZone = function(coordinate, heading, color)
     -- Draw the rectangle
     local depth = 0.5
     local height = 1.0
-    local size = { x = 3.5, y = 13.0, z = height }
+    local size = { x = BusStop.Size.width, y = BusStop.Size.length, z = height }
 
     --Draw the position
     local rotation = { x = .0, y = .0, z = heading + .0 }

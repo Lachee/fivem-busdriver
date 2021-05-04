@@ -2,45 +2,8 @@
 
 if Config.debug then
 
-    RegisterCommand('ldv', function(source, args, rawCommand)
-        if #args ~= 1 then
-            print('Please give a range')
-            TriggerEvent('chat:addMessage', {
-                template = 'Please give a range',
-                args = { }
-            });
-            return
-        end
-
-        local range = tonumber(args[1])
-        local coords = GetEntityCoords(GetPlayerPed(source))
-        ClearVehiclesInArea(coords, range)
-    end)
-
-    RegisterCommand('ped', function(source, args, rawCommand)
-            
-        local coords = GetEntityCoords(GetPlayerPed(source))
-
-        print('finding safe ped spot')
-        local hasSafeSpot, spot = GetSafeCoordForPed(coords.x, coords.y, coords.z, true, 1)
-        if not hasSafeSpot then 
-            print('no safe spot exists')
-            return false 
-        end
-
-        print('creating random ped')
-        DrawZoneMarkerTTL(coords, 2, {r=255,g=255,b=0}, 2000)
-        SpawnRandomPed(coords, function(ped)
-            print('self ped', ped)
-        end)
-
-        DrawZoneMarkerTTL(spot, 2, {r=0,g=255,b=0}, 2000)
-        SpawnRandomPed(spot, function(ped)
-            print('spot ped', ped)
-        end)
-    end)
-
-    RegisterCommand('skip', function(source, args, rawCommand)
+    -- Teleports the user to the next stop
+    RegisterCommand('next_stop', function(source, args, rawCommand)
         if not Job.active then
             print('cannot skip, you are not on a route')
             TriggerEvent('chat:addMessage', {
@@ -66,6 +29,7 @@ if Config.debug then
         });
     end)
 
+    -- Starts a random route
     RegisterCommand('busme', function(source, args, rawCommand)
         local ped       = GetPlayerPed(source)    
         local entity    = ped
@@ -98,6 +62,7 @@ if Config.debug then
         end)
     end)
 
+    -- Gets the users current coords
     RegisterCommand('coords', function(source, args, rawCommand) 
         local ped       = GetPlayerPed(source)    
         local entity    = ped
@@ -117,6 +82,20 @@ if Config.debug then
         });
     end)
 
+    -- Finds all the stops
+    RegisterCommand('find_stops', function(source, args, rawCommand)
+        if DEBUG_FindStops then 
+            DEBUG_FindStops = false
+        else
+            DEBUG_FindStops = true
+        end
+
+        TriggerEvent('chat:addMessage', {
+            template = 'Find stops has been toggled to {0}',
+            args = {  DEBUG_FindStops }
+        });
+    end)
+
     -- Registers a particular bus stop at the players location
     RegisterCommand('create_stop', function(source, args, rawCommand)
         local ped = GetPlayerPed(source)
@@ -133,11 +112,7 @@ if Config.debug then
         -- Prepare the name
         local name = ''
         if #args == 0 then
-            
-            local directions = {
-                N = 360, 0, NE = 315, E = 270, SE = 225, S = 180, SW = 135, W = 90, NW = 45
-            }
-            
+            local directions = { N = 360, 0, NE = 315, E = 270, SE = 225, S = 180, SW = 135, W = 90, NW = 45 }
             local var1, var2 = GetStreetNameAtCoord(coordinates.x, coordinates.y, coordinates.z, Citizen.ResultAsInteger(), Citizen.ResultAsInteger())
             local hash1 = GetStreetNameFromHashKey(var1);
             local hash2 = GetStreetNameFromHashKey(var2);
@@ -152,7 +127,6 @@ if Config.debug then
                     break;
                 end
             end
-            
             name = hash1 .. ' ' .. hash2 .. ' ' .. dir
         else
             name = args[1]
@@ -161,14 +135,16 @@ if Config.debug then
         -- Prepare the identifying coordinates
         local identifyingCoordinates = coordinates
         local model = BusStop.FindNearestModel()
-        print('Model', model)
         if model then 
             identifyingCoordinates = GetEntityCoords(model) 
             heading = GetEntityHeading(model) + 90
         end
 
+        -- Prepare the queue coordiantes
+        
+
         -- Request the stop
-        BusStop.RequestCreateStop(identifyingCoordinates, coordinates, heading, name, function(hash) 
+        BusStop.RequestCreateStop(identifyingCoordinates, coordinates, heading, name, queueCoordinates, function(hash) 
             TriggerEvent('chat:addMessage', {
                 template = 'Bus stop {0} has been created',
                 args = { hash }
@@ -180,19 +156,6 @@ if Config.debug then
         {name = 'name', help = 'The name of the stop'}
     })
 
+    -- Sets the queue spot of the bus stop
 
-
-    -- Registers a particular bus stop at the players location
-    RegisterCommand('find_stops', function(source, args, rawCommand)
-        if DEBUG_FindStops then 
-            DEBUG_FindStops = false
-        else
-            DEBUG_FindStops = true
-        end
-
-        TriggerEvent('chat:addMessage', {
-            template = 'Find stops has been toggled to {0}',
-            args = {  DEBUG_FindStops }
-        });
-    end)
 end

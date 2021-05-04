@@ -3,6 +3,7 @@ Route = {}
 -- Gets a shallow copy of all the routes available
 Route.GetRoutes = function(callback) 
     MySQL.Async.fetchAll('SELECT id, name, earning, minimum_grade, type FROM lachee_bus_routes', {}, function(results)
+        for _, r in pairs(results) do r = _preapreRoute(r) end
         callback(results)
     end)
 end
@@ -83,8 +84,7 @@ Route.GetRandomRoute = function(type, callback)
     end)
 end
 
-
-
+-- Registers the callbacks
 Route.RegisterServerCallbacks = function(ESX) 
     print('Routes.lua registering events')
     

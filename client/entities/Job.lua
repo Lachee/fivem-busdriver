@@ -133,9 +133,6 @@ Job.Process = function()
             } , true)
 
         end
-
-        -- Draw the bus zone
-        BusStop.Render(stop, Config.stopColor)
         
         -- We are boarding, wait
         if Job.isBoarding then
@@ -162,9 +159,9 @@ Job.PreloadPeds = function()
     local stop = Job.GetNextStop()  
     if stop == nil then return false end
     
-    local stopVector = vector3(stop.x+.0, stop.y+.0, stop.z+.0)
-    local isStopSafe, stopCoords = GetSafeCoordForPed(stopVector.x, stopVector.y, stopVector.z, true, 1)
-    if not isStopSafe then stopCoords = stopVector end
+    -- Get the coordinates of the stop
+    local stopCoords = BusStop.GetStopCoords(stop)
+    local queueCoords =  BusStop.GetQueueCoords(stop)
 
     -- Make sure we havn't already preloaded
     if Job.preloadedPeds ~= nil then return true end
@@ -178,13 +175,13 @@ Job.PreloadPeds = function()
         for i,destination in pairs(stop.passengers) do
             -- TODO: Randomise a bit where they spawn
             
+            -- Determine where to spawn them
             local randomRadius = 50.0
             local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
             local checkVector = stopVector + randVector
             local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
             if not isSafe then spawnCoords = stopVector end
             
-
             -- Spawn the ped
             local ped = Ped.SpawnRandom(spawnCoords)
             if ped ~= nil then

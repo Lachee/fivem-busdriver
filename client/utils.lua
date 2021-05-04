@@ -16,7 +16,6 @@ DrawZoneMarkerTTL = function(coordinate, radius, color, ttl)
         while lifetime > 0 do
             local size  = { x = (radius + .0) / 2.0, y = (radius + .0) / 2.0, z = 1.0 }
             DrawMarker(1, coordinate.x, coordinate.y, coordinate.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, size.x, size.y, size.z, color.r, color.g, color.b, 0.05, 0, 0, 0, 0, 0, 0, 0)
-            
             Citizen.Wait(sleep)
             lifetime = lifetime - sleep
         end
@@ -24,7 +23,7 @@ DrawZoneMarkerTTL = function(coordinate, radius, color, ttl)
 end
 
 -- Draws the zone marker snapped to the ground
-DrawZoneMarkerGrounded = function(coordinate, radius, color) 
+DrawGroundedZoneMarker = function(coordinate, radius, color) 
 
     local pos = coordinate
 
@@ -37,7 +36,15 @@ DrawZoneMarkerGrounded = function(coordinate, radius, color)
     DrawZoneMarker(pos, radius, color)
 end
 
-
+-- Draws a circle on the ground, facing the given heading
+DrawHeadingMarker = function(coords, heading, radius, color)
+    if radius == nil then radius = 1.0 end
+    if color == nil then color = {r=255, g=255, b=255} end
+    local size  = { x = (radius + .0) / 2.0, y = (radius + .0) / 2.0, z = 1.0 }
+    
+    local ch = EnsureCoordinateHeading(coords, heading)
+    DrawMarker(26, ch.x, ch.y, ch.z, 0, 0, 0, 0, 0, ch.w, size.x, size.y, size.z, color.r, color.g, color.b, color.a or 0.05, 0, 0, 0, 0, 0, 0, 0)
+end
 
 -- OBSOLETE
 FindClosestObject = function(names, radius, coords)
@@ -93,6 +100,7 @@ FindNearestObjectCoords = function(name, radius, coords)
     return false
 end
 
+-- Draw 3D text at position. If available, ESX will be used
 DrawText3D = function(coords, text, size, font) 
     if ESX then
         ESX.Game.Utils.DrawText3D(coords, text, size, font)
@@ -137,7 +145,45 @@ DrawQuaternion = function(from, q, color, scale)
         255, 0, 255, 1.0
     )
 end
-    
+
+-- Ensures the given coordinates and heading will be returned as a valid vector4(x, y, z, heading)
+--- if the z false, then it will be snapped to ground
+--- if heading is omitted, then it will use coords.w or a random value if unavailable
+EnsureCoordinateHeading = function(coords, heading)
+    -- Determine where to spawn the ped
+    local coordHeading = { x=coords.x, y=coords.y, z=false, w=false }
+    if type(coords) == 'vector4' then 
+        coordHeading.z = coords.z
+        coordHeading.w = coords.w 
+    elseif type(coords) == 'vector3' then 
+        coordHeading.z =  coords.z
+    elseif type(coords) == 'vector2' then
+    else
+        coordHeading.z = coords.z or false
+        coordHeading.w = coords.w or false
+    end
+
+    -- Snap to ground if we dont have a Z
+    if coordHeading.z == false then
+        local onGround, groundZ = GetGroundZFor_3dCoord(coordHeading.x, coordHeading.y, 99999.0, false)
+        if onGround then
+            coordHeading.z = groundZ
+        else
+            --print('warning: failed to local ground for ped spawn.', model, coords)
+            coordHeading.z = 0
+        end
+    end
+
+    -- Update the heading
+    if heading ~= nil then
+        coordHeading.w = heading+.0
+    elseif coordHeading.w == false then
+        coordHeading.w = math.random() * 360
+    end
+
+    return coordHeading
+end
+
 -- Disables a group of actions
 DisableControlActions = function(group, controls, toggle)
     for _, c in pairs(controls) do

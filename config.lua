@@ -8,8 +8,8 @@ Config.coordinates = vector4( 472.2, -592.5, 28.5, 175.28) -- Coordinates to sta
 
 Config.deposit = 200 -- How much the buses cost
 Config.stopColor = { r = 148, g = 0, b = 211 } -- The colour for the markers
-Config.alwaysRenderStops = false -- Always render the names of the stop when players approach, rather then just when there is a route active
-Config.alwaysShowBlips = false -- Always shows the bus stop blips
+Config.alwaysRenderStops = true -- Always render the names of the stop when players approach, rather then just when there is a route active
+Config.alwaysShowBlips = true -- Always shows the bus stop blips
 
 Config.passengerRadius = 200.0 -- Distance before passengers are spawned
 Config.pedVehicleTimeout = 15000 -- How long to wait till we give up and TP the passenger

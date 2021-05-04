@@ -21,3 +21,7 @@ Then in you server cfg:
 - `ensure lachee-busdriver`
 
 **Ensure you migrate your database with the `sql/*.sql` scripts.**
+
+## TODO
+
+- Give some stops (especially rural stops) a place for peds to wait

@@ -104,7 +104,14 @@ Citizen.CreateThread(function()
     local frame = 0;
     while true do
         Citizen.Wait(5)
-        BusStop.RenderAll()
+
+        -- Render either the specific stop or all the stops
+        if Config.alwaysRenderStops then
+            BusStop.RenderAll(Config.stopColor)
+        elseif Job.active then
+            local stop = Job.GetNextStop()
+            if stop ~= nil then  BusStop.Render(stop, Config.stopColor) end
+        end
         
         -- Draw the zone to spawn the bus
         -- BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
@@ -128,11 +135,11 @@ Citizen.CreateThread(function()
         else 
             -- Draw the job marker
             if distance < 1.5 then
-                DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 255, 0, 0 })
+                DrawGroundedZoneMarker(Config.coordinates, 3, { r = 255, 0, 0 })
                 OnJobMarker()
                 onMarker = true
             else
-                DrawZoneMarkerGrounded(Config.coordinates, 3, { r = 200, 100, 0 })
+                DrawGroundedZoneMarker(Config.coordinates, 3, { r = 200, 100, 0 })
             end
         end
 
@@ -152,7 +159,6 @@ if Config.debug then
         local frame = 0;
         while true do
             Citizen.Wait(5)
-            BusStop.RenderAll()
             if DEBUG_FindStops then
                 frame = frame + 1
                 local radius = 15.0
@@ -162,7 +168,7 @@ if Config.debug then
                 local closestObject = FindClosestObject(BusStop.Models, radius)
                 if closestObject then 
                     propCoords = GetEntityCoords(closestObject)
-                    DrawZoneMarkerGrounded(propCoords, 10.0, { r = 255, g = 0, b = 255 }) 
+                    DrawGroundedZoneMarker(propCoords, 10.0, { r = 255, g = 0, b = 255 }) 
 
                     if frame % 2 == 0 then
                         SetNewWaypoint(propCoords.x, propCoords.y)

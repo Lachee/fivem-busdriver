@@ -45,33 +45,7 @@ Ped.Spawn = function(model, coords, callback, networked)
         end
 
         -- Determine where to spawn the ped
-        local coordHeading = { x=coords.x, y=coords.y, z=false, w=false }
-        if type(coords) == 'vector4' then 
-            coordHeading.z = coords.z
-            coordHeading.w = coords.w 
-        elseif type(coords) == 'vector3' then 
-            coordHeading.z =  coords.z
-        elseif type(coords) == 'vector2' then
-        else
-            coordHeading.z = coords.z or false
-            coordHeading.w = coords.w or false
-        end
-
-        -- Snap to ground if we dont have a Z
-        if coordHeading.z == false then
-            local onGround, groundZ = GetGroundZFor_3dCoord(coordHeading.x, coordHeading.y, 99999.0, false)
-            if onGround then
-                coordHeading.z = groundZ
-            else
-                print('warning: failed to local ground for ped spawn. Ped maybe underground.', model, coords)
-                coordHeading.z = 0
-            end
-        end
-
-        -- Random heading if we dont have a heading
-        if coordHeading.w == false then
-            coordHeading.w = math.random() * 360
-        end
+        local coordHeading = EnsureCoordinateHeading(coords)
 
         -- Create the ped
         local ped = CreatePed(4, hash, coordHeading.x+.0, coordHeading.y+.0, coordHeading.z+.0, coordHeading.w+.0, networked, false)
@@ -115,7 +89,7 @@ end
 Ped.NavigateTo = function(ped, coords, speed, withinRange, timeout)
     if ped == nil or ped == 0 then print('error: NavigateTo: ped is empty.') return false end
     if timeout == nil then timeout = -1 end
-    if withinRange == nil then withinRange = 1 end
+    if withinRange == nil then withinRange = 1.0 end
     if speed == nil then speed = Ped.WALK end
     if speed >= Ped.TELEPORT then
         print('Teleport Ped:', ped, coords)
