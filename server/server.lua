@@ -31,7 +31,6 @@ TriggerEvent("esx:getSharedObject", function(library)
             Route.GetRandomRoute(type, function(route)
                 -- Store the route the user is doing
                 playerRoutes[xPlayer.getIdentifier()] = route.id
-                print(ESX.DumpTable(playerRoutes))
                 callback(route)
             end)
         else
@@ -70,6 +69,7 @@ TriggerEvent("esx:getSharedObject", function(library)
                 earning = earning + route.earning
             end
 
+            print('Player finished a route and earned ', state, earning)
             xPlayer.addMoney(earning)
             callback(true, earning)
         end)
