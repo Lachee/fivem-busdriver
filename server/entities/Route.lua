@@ -3,7 +3,7 @@ Route = {}
 -- Gets a shallow copy of all the routes available
 Route.GetRoutes = function(callback) 
     MySQL.Async.fetchAll('SELECT id, name, earning, minimum_grade, type FROM lachee_bus_routes', {}, function(results)
-        for _, r in pairs(results) do r = _preapreRoute(r) end
+        for _, r in pairs(results) do r.stops = nil end
         callback(results)
     end)
 end
@@ -59,11 +59,48 @@ Route.GetRoute = function(routeId, callback)
     end)
 end
 
+-- Get the distance as the bird flys of the route
+Route.GetDistance = function(route) 
+    if route == nil then print('cannot get distance from nil route') return 0 end
+    if route.stops == nil then  print('cannot get distance of route because route infomration was not loaded') return 0 end
+
+    -- Calculate the distance between the first stop and the depo
+    local l = #route.stops
+    local distance = 0
+    if Config.earningIncludesDepo then
+        distance = distance + #(vector3(Config.coordinates.x, Config.coordinates.y, Config.coordinates.z) - vector3(route.stops[1].x, route.stops[1].y, route.stops[1].z))
+        distance = distance + #(vector3(Config.coordinates.x, Config.coordinates.y, Config.coordinates.z) - vector3(route.stops[l].x, route.stops[l].y, route.stops[l].z))
+    end
+
+    -- Calculate the distance between each resulting spot
+    for i = 1, l-1 do
+        local stop      = route.stops[i]
+        local nextStop  = route.stops[i+1]
+        local c = vector3(stop.x, stop.y, stop.z)
+        local n = vector3(nextStop.x, nextStop.y, nextStop.z)
+        local d = #(n - c)
+        distance = distance + d
+    end
+
+    -- Calculate the distance between the last spot and hte depo
+    return distance
+end
+
+-- Gets how much money this route is valued at, rounded down.
+Route.GetEarning = function(route)
+    return math.floor(
+            Config.earningBase -- Base Value
+            + (Route.GetDistance(route) * (route.multiplier * Config.earningPerKM)) -- KM Bonus
+            + (#route.stops + Config.earningPerStop) -- Stop Bonus
+        ) + .0
+end
+
 -- Gets a random bus route with the matching type
 Route.GetRandomRoute = function(type, callback) 
     -- A little inefficient here, but saves me from duplicating code
     local query = ''
     local params = nil
+
     if type ~= false then
         query = 'SELECT id FROM lachee_bus_routes WHERE type = @type ORDER BY RAND() LIMIT 1'
         params = { type = type }

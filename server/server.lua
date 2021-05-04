@@ -31,7 +31,10 @@ TriggerEvent("esx:getSharedObject", function(library)
             Route.GetRandomRoute(type, function(route)
                 -- Store the route the user is doing
                 playerRoutes[xPlayer.getIdentifier()] = route.id
-                callback(route)
+                
+                local routeValue = Route.GetEarning(route)
+                print('player started a route.', route.id, routeValue)
+                callback(route, routeValue)
             end)
         else
             print('Player attempted to start a job invalid', source, job)
@@ -66,7 +69,9 @@ TriggerEvent("esx:getSharedObject", function(library)
             
             -- Pay them for the route
             if state == RouteState.FinishedWithoutVehicle or state == RouteState.FinishedWithVehicle then
-                earning = earning + route.earning
+                local routeValue = Route.GetEarning(route)
+                print('route', routeId, 'worth', routeValue)
+                earning = earning + routeValue
             end
 
             print('Player finished a route and earned ', state, earning)

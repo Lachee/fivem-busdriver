@@ -5,10 +5,17 @@ Config = { }
 Config.debug = true -- Debug visualisation
 
 Config.coordinates = vector4( 472.2, -592.5, 28.5, 175.28) -- Coordinates to start the job
-
-Config.deposit = 200 -- How much the buses cost
 Config.stopColor = { r = 148, g = 0, b = 211 } -- The colour for the markers
 
+Config.deposit = 200                -- How much the buses cost. The player get this back if they return the bus
+Config.earningBase = 0              -- How many dollars does the player get from just completing the job.
+Config.earningPerKM = 0.05          -- How many dollars per km does a route earn. 0.1 gives about 400/10minutes. 
+                                    --      Distance of route is calculated "as the bird flys", use the
+                                    --      route "multiplier" in the database to account for this.
+Config.earningPerStop = 5           -- How many dollars per stop extra does the player earn.
+                                    --      If a stop takes 0.25 minutes, and 1 minute is worth $20, then the bonus should be
+                                    --      about 20*0.25, or $5
+Config.earningIncludesDepo = true   -- Does the travel time too and from the depo count?
 
 Config.alwaysRenderStops = true -- Always render the names of the stop when players approach, rather then just when there is a route active
 Config.alwaysShowBlips = false -- Always shows the bus stop blips
