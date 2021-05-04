@@ -1,8 +1,12 @@
 
 BusStop = {}
 BusStop.Models = { 'prop_busstop_05', 'prop_busstop_02', 'prop_busstop_04', 'prop_bus_stop_sign' }
-BusStop.Stops = {}
 BusStop.Size = { width = 3.5, length= 13.0 }
+
+-- List of blips that have been generated.
+BusStop.Blips = {}
+-- List of all stops (used for debug rendering)
+BusStop.Stops = {}
 
 -- Finds the nearest bus stop model with 25m.
 --  Coords is optional
@@ -11,43 +15,64 @@ BusStop.FindNearestModel = function(coords)
 end
 
 -- Requests a new stop to be created
-BusStop.RequestCreateStop = function(identifingCoordinate, stopCoordinate, heading, name, queue, callback)
+BusStop.RequestCreateStop = function(identifingCoordinate, stopCoordinate, heading, name, callback)
     if queue == nil then queue = vector3(0, 0, 0) end
     
     -- Send the message to the server. Once we get a call back we will log it
-    print('Requesting new bus stop', identifingCoordinate, stopCoordinate, heading, name, queue)
+    print('Requesting new bus stop', identifingCoordinate, stopCoordinate, heading, name)
     ESX.TriggerServerCallback(E.CreateBusStop, function(hash)
         BusStop.RequestAllStops()
         if callback then callback(hash) end
-    end, identifingCoordinate, stopCoordinate, heading, queue, name)
+    end, identifingCoordinate, stopCoordinate, heading, name)
 end
-
 
 -- Gets a list of bus stops
 BusStop.RequestAllStops = function(callback) 
     ESX.TriggerServerCallback(E.GetBusStops, function(stops)
         BusStop.Stops = stops
+        
+        if Config.alwaysShowBlips then
+            for _, stop in pairs(stops) do
+                BusStop.ShowBlip(stop)
+            end
+        end
+
         if callback then  callback(stops) end
     end)
 end
 
 -- Registers the events
 BusStop.RegisterEvents = function(ESX)
-    if Config.alwaysShowBlips then
-        BusStop.RequestAllStops(function(stops)
-            for _, stop in pairs(stops) do
-                stop.blip = AddBlipForCoord(stop.x, stop.y, stop.z)
-                SetBlipSprite(stop.blip, 513)
-                SetBlipDisplay(stop.blip, 4)
-                SetBlipScale(stop.blip, 0.9)
-                -- SetBlipColour(info.blip, info.colour)
-                SetBlipAsShortRange(stop.blip, true)
-                BeginTextCommandSetBlipName("STRING")
-                AddTextComponentString("Bus Stop")
-                EndTextCommandSetBlipName(stop.blip)
-            end
-        end)
+    -- For debugging purposes
+    BusStop.RequestAllStops()
+end
+
+-- Shows a bus stop's blip
+BusStop.ShowBlip = function(stop, visible) 
+    if stop == nil then print('BusStop', 'warning: stop is nil') return false end
+    if visible == nil then visible = true end
+    
+    -- Blip is already hidden, no action required
+    if visible == false and BusStop.Blips[stop.id] == nil then
+        return
     end
+
+    -- Ensure the blip exists
+    if BusStop.Blips[stop.id] == nil then
+        BusStop.Blips[stop.id] = CreateBlip(513, stop, "Bus Stop", 0.9, 0)
+    end
+
+    -- Set the blip's display state
+    if visible then
+        SetBlipDisplay(BusStop.Blips[stop.id], 4)
+    else
+        SetBlipDisplay(BusStop.Blips[stop.id], 0)
+    end
+end
+
+-- Hides a bus stop's blip
+BusStop.HideBlip = function(stop) 
+    return BusStop.ShowBlip(stop, false)
 end
 
 -- Renders the stops

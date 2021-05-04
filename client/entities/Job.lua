@@ -201,6 +201,12 @@ end
 
 -- Goes to the next stop
 Job.NextStop = function() 
+    -- Clean up the previous stop
+    local prevStop = Job.GetNextStop()
+    if prevStop ~= nil then 
+        BusStop.HideBlip(prevStop)
+    end
+
     -- Increment and set waypoint
     Job.nextStop = Job.nextStop + 1
     Job.SetWaypoint()
@@ -336,10 +342,9 @@ Job.Begin = function(callback)
         Job.nextStop = 0
         Job.isRouteFinished = false
         Job.isBoarding = false
+        Route.ShowBlips(Job.route)
 
         --Route.SetGps(Job.route)
-        
-        -- if Config.debug then print(ESX.DumpTable(Job.route)) end
         
         -- TODO: Trigger Bond Deposit
         
@@ -372,6 +377,7 @@ Job.End = function(isForfeit, hasReturnedBus)
     if hasReturnedBus then routeState = routeState + 1 end
     if not isForfeit then routeState = routeState + 2 end
 
+    -- We ended the job. Tell the server to clean us up
     print('Ending Job', Job.route.id, routeState)
     ESX.TriggerServerCallback(E.EndJob, function(success, data) 
         -- Something fucky happened

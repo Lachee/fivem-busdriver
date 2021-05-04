@@ -22,10 +22,12 @@ end)
 local blip = nil
 function EnsureJob(playerData)
     if playerData == nil then return end 
+    if playerData.job == nil then return end
+    
     local jobName = playerData.job.name
     if jobName == 'busdriver' then
         if blip ~= nil then
-            SetBlipDisplay(4)
+            SetBlipDisplay(blip, 4)
         else
             blip = CreateBlip(513, Config.coordinates, "Bus Depo", 1.0, 16)
         end

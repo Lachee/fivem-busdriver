@@ -10,27 +10,19 @@ Route.SetGps = function(route)
     SetGpsMultiRouteRender(true)
 end
 
---[[
-Route.ActivateRoute = function(route)
-    print('route', 'activating route', route.id)
-    if not Route.active[route.id] then
-    end
-
-    local routeInfo = Route.active[route.id]
-    routeInfo.usage = routeInfo.usage + 1
-end
-
-Route.DeactivateRoute = function(route)
-    print('route', 'deactivating route', route.id)
-    if not Route.active[route.id] then return end
-    
-    local routeInfo = Route.active[route.id]
-    routeInfo.usage = routeInfo.usage - 1
-    if routeInfo.usage <= 0 then
-
+-- Show the blips for all the stops we plan to make
+Route.ShowBlips = function(route)
+    for _, s in pairs(route.stops) do
+        BusStop.ShowBlip(s)
     end
 end
-]]
+
+-- Hides all the blips in the route
+Route.HideBlips = function(route)
+    for _, s in pairs(route.stops) do
+        BusStop.HideBlip(s)
+    end
+end
 
 
 Route.RegisterEvents = function(ESX)

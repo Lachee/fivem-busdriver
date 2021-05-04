@@ -140,11 +140,8 @@ if Config.debug then
             heading = GetEntityHeading(model) + 90
         end
 
-        -- Prepare the queue coordiantes
-        
-
         -- Request the stop
-        BusStop.RequestCreateStop(identifyingCoordinates, coordinates, heading, name, queueCoordinates, function(hash) 
+        BusStop.RequestCreateStop(identifyingCoordinates, coordinates, heading, name, function(hash) 
             TriggerEvent('chat:addMessage', {
                 template = 'Bus stop {0} has been created',
                 args = { hash }
@@ -155,14 +152,4 @@ if Config.debug then
     TriggerEvent('chat:addSuggestion', '/create_stop', 'Adds a stop', {
         {name = 'name', help = 'The name of the stop'}
     })
-
-    -- Sets the queue spot of the bus stop
-    RegisterCommand('set_queue', function(source, args, rawCommand)
-        if #args ~= 1 then
-            TriggerEvent('chat:addMessage', { template = '~r~Need to have the ID of the stop', });
-            return
-        end
-
-        
-    end)
 end
