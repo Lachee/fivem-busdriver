@@ -178,9 +178,9 @@ Job.PreloadPeds = function()
             -- Determine where to spawn them
             local randomRadius = 50.0
             local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
-            local checkVector = stopVector + randVector
+            local checkVector = stopCoords + randVector
             local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
-            if not isSafe then spawnCoords = stopVector end
+            if not isSafe then spawnCoords = stopCoords end
             
             -- Spawn the ped
             local ped = Ped.SpawnRandom(spawnCoords)
@@ -188,7 +188,7 @@ Job.PreloadPeds = function()
                 print("Ped Spawned", ped)
                 
                 Citizen.Wait(100)
-                Ped.NavigateTo(ped, stopCoords, Ped.RUN, 0.5)
+                Ped.NavigateTo(ped, queueCoords, Ped.RUN, 0.5)
                 table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
             end
         end

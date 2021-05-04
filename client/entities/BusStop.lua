@@ -71,8 +71,15 @@ BusStop.GetQueueCoords = function(stop)
         return vector3(stop.qx+.0, stop.qy+.0, stop.qz+.0)
     end
     
-    -- Find the default
+    -- Find the default position
     local stopCoords = BusStop.GetStopCoords(stop)
+    local qForward = quat(stop.heading, vector3(0, 0, 1))
+    local qRight = quat(stop.heading-90, vector3(0, 0, 1))
+    stopCoords = stopCoords 
+                    + ((qForward * vector3(0, 1, 0)) * (BusStop.Size.length * 0.5 - 1.5)) 
+                    + ((qRight * vector3(0, 1, 0)) * (BusStop.Size.width * 0.5 + 1.0))
+
+    -- Try to find the safest coord near that
     local isStopSafe, safeCoords = GetSafeCoordForPed(stopCoords.x, stopCoords.y, stopCoords.z, true, 1)
     if isStopSafe then return safeCoords end
 
@@ -97,8 +104,18 @@ BusStop.Render = function(stop, color)
 
     -- Draw some debug markers
     if Config.debug then
-        DrawHeadingMarker(BusStop.GetStopCoords(stop), stop.heading, Config.stopDistanceLimit or 1.0, color)
-        DrawGroundedZoneMarker(BusStop.GetQueueCoords(stop), 1.0, { r=255, g=0, b=0 })
+        local stopCoord = BusStop.GetStopCoords(stop)
+
+        local qForward = quat(stop.heading, vector3(0, 0, 1))
+        local qRight = quat(stop.heading-90, vector3(0, 0, 1))
+        DrawQuaternion(stopCoord, qForward, {r=255, g=0, b=0})
+        DrawQuaternion(stopCoord, qRight, {r=0, g=255, b=0})
+        
+        DrawHeadingMarker(stopCoord, stop.heading, Config.stopDistanceLimit or 1.0, color)
+
+        local queueColor = { r=255, g=0, b=0 }
+        if stop.hasQueue then queueColor = { r=0, g=255, b=0 } end
+        DrawGroundedZoneMarker(BusStop.GetQueueCoords(stop), 1.0, queueColor)
     end
 end
 
@@ -117,17 +134,17 @@ BusStop.DrawZone = function(coordinate, heading, color)
     if hasGround then 
         position.z = groundZ - depth
         
-        if Config.debug and DEBUG_FindStops then
-            local qHeading = quat(heading, vector3(0, 0, 1))
-            DrawQuaternion(coordinate, qHeading, {r=255, g=0, b=0})
-            
-            local qRoad = quat(vector3(0, 1, 0), normal)
-            DrawQuaternion(coordinate, qRoad, {r=0, g=255, b=0})
-
-            -- We need to rotate qRoad 90deg in the direction of qHeading
-            local qNew = qRoad * quat(90, vector3(1, 0, 0))
-            DrawQuaternion(coordinate, qNew, {r=0, g=0, b=255})
-        end
+        -- if Config.debug and DEBUG_FindStops then
+        --     local qHeading = quat(heading, vector3(0, 0, 1))
+        --     DrawQuaternion(coordinate, qHeading, {r=255, g=0, b=0})
+        --     
+        --     local qRoad = quat(vector3(0, 1, 0), normal)
+        --     DrawQuaternion(coordinate, qRoad, {r=0, g=255, b=0})
+-- 
+        --     -- We need to rotate qRoad 90deg in the direction of qHeading
+        --     local qNew = qRoad * quat(90, vector3(1, 0, 0))
+        --     DrawQuaternion(coordinate, qNew, {r=0, g=0, b=255})
+        -- end
     end
 
     DrawMarker(43, 
