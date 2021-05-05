@@ -240,3 +240,97 @@ ClearVehiclesInArea = function(coords, radius)
     end
     return deleted
 end
+
+--- Iterates over all the objects in the world
+-- @params filter a callback to be executed for ever object found. Use something like Filter.Model
+ObjectIterator = function(filter)
+    local handle, next = FindFirstObject()
+    local hasNext = handle ~= nil and handle ~= 0
+    local curr = nil
+
+    return function()
+        -- Keep looping until we return something
+        while hasNext do
+            -- Get the current and the next
+            curr = next
+            hasNext, next = FindNextObject(handle)
+    
+            -- Filter the record if we can, otherwise just return the record
+            if curr ~= nil and curr ~= 0 and (filter == nil or filter(curr)) then
+                return curr
+            end
+        end
+
+        -- Clean up the handle
+        if handle ~= nil and handle ~= 0 then    
+            EndFindObject(handle)
+        end
+    end
+end
+
+--- List of filters that can be used with the ObjectIterator.
+-- All items within the object are constructors for the filter.
+--  The last element is always the optional child filter that get's AND
+ObjectFilter = {
+    --- Filters objects to a list of models
+    model = function(models, filter) {
+        hashes = {}
+        if type(models) == 'string' then 
+            hashes[GetHashKey(models)] = models
+        else
+            for _, m in pairs(models) do
+                hashes[GetHashKey(m)] = m
+            end
+        end
+        
+        -- Return the filter
+        return function(object) 
+            local hash = GetEntityModel(object)
+            return hashes[hash] ~= nil and 
+                    (filter == nil or filter(object))
+        end
+    },
+    --- Filter objects to within the range of coordinates
+    range = function(coordinates, range, filter) 
+        local coords = vector3(coordinates.x, coordinates.y, coordinates.z)
+        return function(object)
+            local objCoords = GetEntityCoords(object)
+            return #(objCoords - coords) <= range+.0 and 
+                    (filter == nil or filter(object)) 
+        end
+    end,
+    --- Fitlers for peds
+    ped = function(filter) 
+        return function(object)
+            return GetEntityType(object) == 1 and
+                    (filter == nil or filter(object)) 
+        end
+    end,
+    --- Filters for vehicles.  
+    vehicle = function(filter)
+        return function(object)
+            return GetEntityType(object) == 2 and
+                    (filter == nil or filter(object)) 
+        end
+    end,
+    --- Checks if the entity is dead
+    dead = function(filter)        
+        return function(object)
+            return IsEntityDead(object) and
+                    (filter == nil or filter(object)) 
+        end
+    end,
+
+    --- Inverts the filter
+    -- Its probably better to just make your own filter instead of using this.
+    -- ObjectFilter.not(ObjectFilter.dead())
+    not = function(filter) 
+        if filter == nil then 
+            print('error: filter cannot be nil for NOT')
+            return nil
+        end
+        return function(object)
+            return ~filter(object)
+        end
+    end
+}
