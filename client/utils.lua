@@ -242,7 +242,7 @@ ClearVehiclesInArea = function(coords, radius)
 end
 
 --- Iterates over all the objects in the world
--- @params filter a callback to be executed for ever object found. Use something like Filter.Model
+-- @params filter a callback to be executed for ever object found. Use something like ObjectFilter.model
 ObjectIterator = function(filter)
     local handle, next = FindFirstObject()
     local hasNext = handle ~= nil and handle ~= 0
@@ -266,6 +266,14 @@ ObjectIterator = function(filter)
             EndFindObject(handle)
         end
     end
+end
+
+--- Iterates over all the objects in the world and returns a table
+-- @params filter a callback to be executed for every object found. Use something like ObjectFilter ob it
+GetObjects = function(filter) 
+    local arr = {}
+    for _, v in ObjectIterator(filter) do arr[#arr + 1] = v end
+    return arr
 end
 
 --- List of filters that can be used with the ObjectIterator.
