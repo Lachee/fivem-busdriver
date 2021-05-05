@@ -79,7 +79,6 @@ Ped.SpawnRandomLocal = function(coords, callback)
     return Ped.Spawn(model, coords, callback, false)
 end
 
-
 --- Tells the ped to navigate to the specific coordinates using the navmesh
 -- @params ped the ped
 -- @params coords the coordinates
