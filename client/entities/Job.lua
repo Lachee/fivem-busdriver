@@ -3,49 +3,80 @@ Job = {}
 Job.active = false
 Job.route = nil
 Job.nextStop = 1
-Job.canLoadPassengers = false
+Job.canBoardPassengers = false
 Job.preloadedPeds = nil
 Job.boardingPeds = nil
 Job.isBoarding = false
 Job.isRouteFinished = false
 
 -- Internal update loop
-Job.UpdateThread = function() 
+Job.Process = function() 
     if not Job.active then return end
 
     local stop = Job.GetNextStop()
     if stop ~= nil then
-        -- Perform the GPS
-        -- Set the GPS
-        
         -- Check if the bus is on it
         if Bus.current == nil then
-            ESX.ShowHelpNotification("Get back into your bus.")
+            ESX.ShowHelpNotification("Get back into your bus.", true, false)
             return
         end
         
+        -- Determine how far away we are
         local stopCoords = vector3(stop.x+.0, stop.y+.0, stop.z+.0)
         local coords = GetEntityCoords(Bus.current)
         local heading = GetEntityHeading(Bus.current)
         local distance = GetDistanceBetweenCoords(coords, stopCoords, false)
         local headingDiff = (heading - stop.heading + 180 + 360) % 360 - 180
-        Job.canLoadPassengers = false    
 
         -- Determine if we can preload
         if distance <= Config.passengerRadius then
             Job.PreloadPeds()
         end
 
+        -- Cull any vehicles on the spot
+        if distance <= 100.0 and stop.clear > 0.0 then
+            -- TODO: Text Owners that their vehicle was deleted because it was illegal
+            -- parked in a bus stop
+            ClearVehiclesInArea(vector3(stop.x, stop.y, stop.z), stop.clear + .0)
+            stop.clear = 0
+        end
+
         -- Determine if we can pickup passengers
+        Job.canBoardPassengers = false
         if distance <= Config.stopDistanceLimit then
             if headingDiff <= Config.stopHeadingLimit and headingDiff >= -Config.stopHeadingLimit then
-                Job.canLoadPassengers = true
+                Job.canBoardPassengers = true
             end
         end
 
-        if Job.canLoadPassengers then
-            ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors")
-            
+        -- We are not boarding and we are not in a spot that can board passengers. Tell the user to go to the stop
+        if Job.isBoarding then
+            -- We are boarding, so keep the controls disabled and the hazards on
+            Bus.SetHazards(true)
+            DisableControlActions(0, {
+                Controls.INPUT_VEH_ACCELERATE,
+                Controls.INPUT_VEH_BRAKE
+            }, true)
+        else
+            -- We are not boarding, display the help notification
+            if not Job.canBoardPassengers then
+                local stopName = '~y~'.. stop.id .. '~s~ | ~y~' .. stop.name .. '~s~'
+                ESX.ShowHelpNotification('Drive to ' .. stopName, true, false)
+
+                -- Close the damn doors
+                if not IsVehicleStopped(Bus.current) then
+                    Bus.CloseDoors()
+                end
+            end
+        end
+
+
+        -- If we can board passengers
+        if Job.canBoardPassengers then
+            if not Job.isBoarding then
+                ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to open and close doors", true, false)
+            end
+
             -- Disable the control
             DisableControlActions(0, {
                 Controls.INPUT_VEH_EXIT,
@@ -56,23 +87,38 @@ Job.UpdateThread = function()
                 Controls.INPUT_VEH_PREV_RADIO,
             } , true)
 
+            -- We are not boarding and we pressed the board button, we should perform the board logic
             if not Job.isBoarding and IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
                 Job.isBoarding = true
-
-                --Bus.OpenDoors()
                 Citizen.CreateThread(function() 
-                    Job.DepartPassengers(function() 
-                        Job.BoardPassengers(function()
-                            -- Close the door, show the notif and play a sound
-                            Bus.CloseDoors()
-                            ESX.ShowNotification('All passengers ready', true, false, 60)
-                            -- PlaySoundFromEntity(-1, "Burglar_Bell", Bus.current, "Generic_Alarms", 0, 0)
+  
+                    ESX.ShowNotification('Disembarking Passengers...', true, false, 60)
+                    Job.DisembarkPassengers()
 
-                            -- Increment the stop
-                            Job.NextStop()
-                            Job.isBoarding = false
-                        end)
-                    end)
+                    -- Opening doors bugs out the AI
+                    -- Bus.OpenDoors()
+                    -- Citizen.Wait(150)
+
+                    ESX.ShowNotification('Boarding Passengers...', true, false, 60)
+                    Job.EmbarkPassengers()
+
+                    -- Close the door, show the notif and play a sound
+                    
+                    Citizen.Wait(1000)
+                    Bus.CloseDoors()
+                    Citizen.Wait(500)
+                    ESX.ShowNotification('All passengers ready', true, false, 60)
+
+                    -- Increment the stop
+                    Job.NextStop()
+                    Job.isBoarding = false
+                    Bus.SetHazards(false)
+
+                    -- Enable controls if we are no longer boarding
+                    EnableControlActions(0, {
+                        Controls.INPUT_VEH_ACCELERATE,
+                        Controls.INPUT_VEH_BRAKE
+                    }, true)
                 end)
             end
         else
@@ -85,20 +131,26 @@ Job.UpdateThread = function()
                 Controls.INPUT_VEH_NEXT_RADIO,
                 Controls.INPUT_VEH_PREV_RADIO,
             } , true)
-        end
 
+        end
+        
         -- We are boarding, wait
         if Job.isBoarding then
-            ESX.ShowHelpNotification('Wait for passengers', false, false, 1)
-            for _, ped in pairs(Job.boardingPeds) do
-                local coords = GetEntityCoords(ped)
-                DrawMarker(0, coords.x, coords.y, coords.z + 1.5, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 255, 255, 0, 1.0, false, false, 2, false)
+            ESX.ShowHelpNotification('Wait for passengers', true, false)
+            for _, bp in pairs(Job.boardingPeds) do
+                if not Ped.InVehicle(bp.ped) then
+                    local coords = GetEntityCoords(bp.ped)
+                    DrawMarker(0, coords.x, coords.y, coords.z + 1.5, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 255, 255, 0, 1.0, false, false, 2, false)
+                end
             end
         end
-    else
-        -- We need to clean up
-        ESX.ShowHelpNotification('Return the bus to the ~g~depo~s', false, false, 1)
     end
+    
+    if Job.isRouteFinished then
+        -- We need to clean up
+        ESX.ShowHelpNotification('Return the bus to the ~y~depo', true, false)
+    end
+    
 end
 
 -- Loads all the passengers if able
@@ -107,32 +159,41 @@ Job.PreloadPeds = function()
     local stop = Job.GetNextStop()  
     if stop == nil then return false end
     
-    local stopVector = vector3(stop.x+.0, stop.y+.0, stop.z+.0)
-    local isStopSafe, stopCoords = GetSafeCoordForPed(stopVector.x, stopVector.y, stopVector.z, true, 1)
-    if not isStopSafe then stopCoords = stopVector end
+    -- Get the coordinates of the stop
+    local stopCoords = BusStop.GetStopCoords(stop)
+    local queueCoords =  BusStop.GetQueueCoords(stop)
 
     -- Make sure we havn't already preloaded
     if Job.preloadedPeds ~= nil then return true end
 
     -- Perform the preload
-    print('Performing Preload...')
     Job.preloadedPeds = {}
-    for i,destination in pairs(stop.passengers) do
-        -- TODO: Randomise a bit where they spawn
-        
-        local randomRadius = 50.0
-        local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
-        local checkVector = stopVector + randVector
-        local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
-        if not isSafe then spawnCoords = stopVector end
-        
+    Citizen.CreateThread(function() 
+        print('Job', 'Preload Begin')
 
-        -- Spawn the ped
-        Ped.SpawnRandom(spawnCoords, function(ped)
-            table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
-            Ped.NavigateTo(ped, stopCoords, Ped.RUN, 0.5)
-        end) 
-    end
+        -- Spawn passenger
+        for i,destination in pairs(stop.passengers) do
+            -- TODO: Randomise a bit where they spawn
+            
+            -- Determine where to spawn them
+            local randomRadius = 50.0
+            local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
+            local checkVector = stopCoords + randVector
+            local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
+            if not isSafe then spawnCoords = stopCoords end
+            
+            -- Spawn the ped
+            local ped = Ped.SpawnRandom(spawnCoords)
+            if ped ~= nil then
+                print("Ped Spawned", ped)
+                
+                Citizen.Wait(100)
+                Ped.NavigateTo(ped, queueCoords, Ped.RUN, 0.5)
+                table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
+            end
+        end
+        print('Job', 'Preload End')
+    end)
 
     -- We preloaded them
     return true
@@ -140,8 +201,11 @@ end
 
 -- Goes to the next stop
 Job.NextStop = function() 
-    print('going to next stop')
-    ESX.ShowHelpNotification('Go to the next stop', false, true, 5.0)
+    -- Clean up the previous stop
+    local prevStop = Job.GetNextStop()
+    if prevStop ~= nil then 
+        BusStop.HideBlip(prevStop)
+    end
 
     -- Increment and set waypoint
     Job.nextStop = Job.nextStop + 1
@@ -158,52 +222,49 @@ Job.NextStop = function()
 end
 
 -- Tells the passengers to get on
-Job.BoardPassengers = function(callback)
+Job.EmbarkPassengers = function(callback)
     local stop = Job.GetNextStop()
     if not stop then 
-        print('stop does not exist')
+        print('Job', 'failure: stop does not exist')
         return false 
     end
 
     -- Wait to preload the peds
-    print('Preloading Peds')
-    while Job.preloadedPeds == nil do
-        Job.PreloadPeds()
-        Citizen.Wait(10)
-    end
+    -- while Job.preloadedPeds == nil do
+    --     print('Job', 'preloading peds')
+    --     Job.PreloadPeds()
+    --     Citizen.Wait(10)
+    -- end
 
     -- Tell the passengers to get on the bus
-    print('boarding new shits')
+    print('Job', 'embarking new passengers')
     Job.boardingPeds = {}
     for i, pp in pairs(Job.preloadedPeds) do
-        local passenger = Bus.AddPassenger(pp.ped)
+        local passenger, seat = Bus.AddPassenger(pp.ped)
         if passenger ~= nil then 
             -- Set hte destination
             Bus.SetPassengerDestination(passenger, pp.destination)
-            table.insert(Job.boardingPeds, pp.ped)
+            table.insert(Job.boardingPeds, { ped = pp.ped, seat = pp.seat })
         else
-            -- Cleanup the ped
-            Ped.WanderAway(ped)
+            -- Tell GTA to clean this user up
+            Ped.WanderAway(pp.ped)
         end
     end
 
     -- Wait till they are all on the bus
-    print('waiting for passenger onboard')
+    print('Job', 'waiting for passengers to embark')
     while not Bus.CheckPassengersEmbarked() do
-        -- TODO: Nag Passengers to get on board already. This should prevent them "forgetting" they are boarding
-        Citizen.Wait(100) 
+        Citizen.Wait(250) 
     end
 
     -- Finally callback
-    print('We are ready')
-    ESX.ShowNotification('Passengers embarked', true, false, 60)
-    callback()
-    return true
+    print('Job', 'passengers embarked')
+    if callback then callback() end
 end
 
 -- Tells the passengers to fuck off
-Job.DepartPassengers = function(callback)
-    print('kicking the lil shits off')
+Job.DisembarkPassengers = function(callback)
+    print('Job', 'Disembarking Passengers')
 
     -- Tell passengers when their destination arrived
     for i, p in pairs(Bus.passengers) do
@@ -212,17 +273,23 @@ Job.DepartPassengers = function(callback)
         end
     end
 
+    local disembarkAttempts = 100
+
     -- Wait for them to leave
-    print('waiting for them to leave')
     while not Bus.CheckPassengersDisembarked(function(passenger) 
         -- Tell the ped to wander around. We dont care.
         Ped.WanderAway(passenger.ped)
-    end) do Citizen.Wait(10) end
+    end) and disembarkAttempts >=0 do 
+        disembarkAttempts = disembarkAttempts - 1
+        Citizen.Wait(100) 
+    end
     
+    -- Cull the shits that wont leave
+    Bus.Cull()
+
     -- Finally callback
-    print('everyone off')
-    ESX.ShowNotification('Passengers disembarked', true, false, 60)
-    callback()
+    print('Job', 'Passengers left')
+    if callback then callback() end
 end
 
 -- Sets the waypoint to the current stop
@@ -256,11 +323,16 @@ end
 Job.Begin = function(callback) 
     Job.active = true
 
-    ESX.TriggerServerCallback(E.BeginJob, function(route) 
+    ESX.TriggerServerCallback(E.BeginJob, function(route, message) 
 
         -- Validate the route
         if route == nil then
-            ESX.ShowNotification('There is ~r~no~s~ routes available for you', true, true, 10)
+            if message == 'deposit' then
+                ESX.ShowNotification('You do not have enough money for the ~r~'..tomoney(Config.deposit)..'~s~ deposit', true, false, 16)
+            else
+                ESX.ShowNotification('There is ~r~no~s~ routes available for you', true, true, 10)
+            end
+
             Job.active = false
             return
         end
@@ -270,17 +342,16 @@ Job.Begin = function(callback)
         Job.nextStop = 0
         Job.isRouteFinished = false
         Job.isBoarding = false
+        Route.ShowBlips(Job.route)
 
         --Route.SetGps(Job.route)
-        
-        -- if Config.debug then print(ESX.DumpTable(Job.route)) end
         
         -- TODO: Trigger Bond Deposit
         
         -- Spawn a bus
         Bus.Create(route.type, Config.coordinates, function(bus) 
             if bus == nil then 
-                Job.End(false) 
+                Job.End(false, true) 
                 ESX.ShowNotification('~r~Your bus failed to spawn for some reason', true, true, 10)
                 return 
             end
@@ -290,25 +361,54 @@ Job.Begin = function(callback)
 
             -- Trigger next stop
             Job.NextStop()
-
-            ESX.ShowNotification('You have started working', true, true, 10)
+            ESX.ShowNotification('You paid ~r~'..tomoney(Config.deposit)..'~s~ and started your route', true, true, 10)
             if callback then callback(route) end
         end)
     end)
 end
 
 -- Ends the job
-Job.End = function(forfeit) 
+Job.End = function(isForfeit, hasReturnedBus) 
     -- Disable the active state of the job
     Job.active = false
     
-    -- Wait for the user to leave the bus
-    if forfeit then
-        ESX.ShowNotification('You have ~r~forfeited~s~ your route', true, true, 10)
-    else 
-        ESX.ShowNotification('You have ~g~completed~s~ your route', true, true, 20)
-        --TODO: Trigger Bond Repayment
-    end
+    -- Calculate the route state
+    local routeState = 0
+    if hasReturnedBus then routeState = routeState + 1 end
+    if not isForfeit then routeState = routeState + 2 end
+
+    -- We ended the job. Tell the server to clean us up
+    print('Ending Job', Job.route.id, routeState)
+    ESX.TriggerServerCallback(E.EndJob, function(success, data) 
+        -- Something fucky happened
+        if not success then
+            print('failed to payout for the route', data)
+            ESX.ShowNotification('Something went ~r~wrong~s~', true, true, 10)
+            return
+        end
+
+        print('Finished Results:', success, data)
+
+        -- Alert the notification
+        if routeState == RouteState.ForfeitWithoutVehicle then
+            ESX.ShowNotification('You ~r~forfeited~s~ the route and the deposit', true, true, 10)
+        end
+        if routeState == RouteState.ForfeitWithVehicle then
+            ESX.ShowNotification('You ~r~forfeited~s~ the route. Your deposit was ~g~returned', true, true, 10)
+        end
+        if routeState == RouteState.FinishedWithoutVehicle then
+            ESX.ShowNotification('You ~g~completed~s~ the route, but ~r~forfeited~s~ your deposit', true, true, 10)
+        end        
+        if routeState == RouteState.FinishedWithVehicle then
+            ESX.ShowNotification('You ~g~completed~s~ the route. Your deposit was ~g~returned', true, true, 10)
+        end
+
+        -- Show we were paid
+        if data > 0 then
+            ESX.ShowNotification('You were paid ~g~' .. tomoney(data), true, true, 10)
+        end
+
+    end, Job.route.id, routeState)
 
     -- Finally clear the route
     Bus.Destroy()

@@ -7,7 +7,12 @@ E = {
     GetRoute = 'lacheebus:requestSpecificRoute',    -- Gets a specific route
 
     BeginJob = 'lacheebus:startJob',                -- Begin the job
+    EndJob = 'lacheebus:endJob',
+    
+    RouteActive = 'lacheebus:routeActive',          -- Someone has started this route
+    RouteDeactive = 'lacheebus:routeDeactive',      -- Someone has finished this route
 }
+
 
 -- print('Loaded Events: ')
 -- for k, v in pairs(E) do print(k, v) end

@@ -1,6 +1,15 @@
 
 BusStop = {}
 
+-- Creates the bus stop object
+function _prepareBusStop(data)
+    data.hasQueue = false
+    if data.qx ~= 0 and data.qy ~= 0 and data.qz ~= 0 then
+        data.hasQueue = true
+    end
+    return data
+end
+
 -- Creates a new bus stop at the given location
 BusStop.CreateStop = function(identifingCoordinate, stopCoordinate, heading, name)
     
@@ -30,6 +39,7 @@ end
 -- Gets all the bus stops
 BusStop.GetAllStops = function(callback)
     MySQL.Async.fetchAll('SELECT * FROM lachee_bus_stops', {}, function(results)
+        for _, s in pairs(results) do s = _prepareBusStop(s) end
         callback(results)
     end)
 end
@@ -37,6 +47,7 @@ end
 -- Gets all the stops at the given location
 BusStop.GetStops = function(ids, callback) 
     MySQL.Async.fetchAll('SELECT * FROM lachee_bus_stops WHERE id IN (@ids)', { ids = ids }, function(results)
+        for _, s in pairs(results) do s = _prepareBusStop(s) end
         callback(results)
     end)
 end

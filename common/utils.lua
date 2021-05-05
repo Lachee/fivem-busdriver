@@ -8,6 +8,20 @@ function table.indexOf(t, object)
     end
 end
 
+-- table.filter({"a", "b", "c", "d"}, function(o, k, i) return o >= "c" end)  --> {"c","d"}
+--
+-- @FGRibreau - Francois-Guillaume Ribreau
+-- @Redsmin - A full-feature client for Redis http://redsmin.com
+table.filter = function(t, filterIter)
+	local out = {}
+  
+	for k, v in pairs(t) do
+	  if filterIter(v, k, t) then out[k] = v end
+	end
+  
+	return out
+  end
+
 local rad2Deg = math.rad2Deg
 local pi = math.pi
 local half_pi = pi * 0.5
@@ -65,4 +79,19 @@ function SanitizeEuler(euler, mul)
 		euler.z = euler.z + two_pi
 	end
     return vector3(euler.x * mul, euler.y * mul, euler.z * mul)
+end
+
+function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end
