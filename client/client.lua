@@ -50,21 +50,8 @@ AddEventHandler("esx:setJob", function(newJob)
     EnsureJob(ESX.PlayerData)
 end)
 
--- Spawn a bus
-RegisterNetEvent(E.SpawnVehicle)
-AddEventHandler(E.SpawnVehicle, function() 
-    print('Spawn Event: ' .. E.SpawnVehicle)
-    --local xPlayer = ESX.GetPlayerFromId(playerId)
-    local ped = GetPlayerPed(-1)
-
-    local coords = GetEntityCoords(ped)
-    local heading = GetEntityHeading(ped)
-    ESX.Game.SpawnVehicle("bus", coords, heading, function(vehicle) 
-        print(DoesEntityExist(vehicle), 'this code is async!')
-    end)
-end)
-
-function OnJobMarker() 
+-- Update while the player is within the job marker
+function UpdateJobMarker() 
     if Job.active then
 
         -- This is technically bugged. Means you can walk home without your bus
@@ -87,7 +74,8 @@ function OnJobMarker()
     end
 end
 
-function OnBusMarker() 
+-- Update while the player is within the bus return marker
+function UpdateBusMarker() 
     if Job.isRouteFinished then
         ESX.ShowHelpNotification("Press ~INPUT_VEH_EXIT~ to ~g~finish~s~ your route", true, false)
     else
@@ -115,9 +103,6 @@ Citizen.CreateThread(function()
             if stop ~= nil then  BusStop.Render(stop, Config.stopColor) end
         end
         
-        -- Draw the zone to spawn the bus
-        -- BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
-
         local coords    = GetEntityCoords(PlayerPedId())
         local vehicle   = GetVehiclePedIsIn(PlayerPedId(), true) 
         local distance  = GetDistanceBetweenCoords(coords, Config.coordinates, false)
@@ -128,7 +113,7 @@ Citizen.CreateThread(function()
             distance = GetDistanceBetweenCoords(GetEntityCoords(vehicle), Config.coordinates, false)
             if distance < 1.5 then
                 BusStop.DrawZone(Config.coordinates, Config.coordinates.w, { r = 255, 0, 0 })
-                OnBusMarker()
+                UpdateBusMarker()
                 onMarker = true
             else
                 -- Draw where to park the bus
@@ -136,12 +121,14 @@ Citizen.CreateThread(function()
             end
         else 
             -- Draw the job marker
-            if distance < 1.5 then
-                DrawGroundedZoneMarker(Config.coordinates, 3, { r = 255, 0, 0 })
-                OnJobMarker()
-                onMarker = true
-            else
-                DrawGroundedZoneMarker(Config.coordinates, 3, { r = 200, 100, 0 })
+            if not Ped.InVehicle(PlayerPedId()) then
+                if distance < 1.5 then
+                    DrawGroundedZoneMarker(Config.coordinates, 3, { r = 255, 0, 0 })
+                    UpdateJobMarker()
+                    onMarker = true
+                else
+                    DrawGroundedZoneMarker(Config.coordinates, 3, { r = 200, 100, 0 })
+                end
             end
         end
 

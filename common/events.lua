@@ -1,5 +1,4 @@
 E = {
-    SpawnVehicle = 'lacheebus:spawnVehicle',    -- Spawn a specific vehicle
     CreateBusStop = 'lacheebus:createBusStop',  -- Request to create a bus stop
     GetBusStops = 'lacheebus:requestBusStops',  -- Requests all bus stops
 

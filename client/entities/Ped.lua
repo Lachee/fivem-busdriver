@@ -190,11 +190,8 @@ end
 Ped.InVehicle = function(ped, vehicle, asGetIn)
     if ped == nil or ped == 0 then print('error: InVehicle: ped is empty.') return false end
     if asGetIn == nil then asGetIn = true end
-    -- if vehicle == nil then vehicle = GetVehiclePedIsIn(ped, true) end
-    if vehicle == nil or vehicle == 0 then
-        --print('warning: ped was never in a vehicle')
-        return false
-    end
+    if vehicle == nil then vehicle = GetVehiclePedIsIn(ped, true) end
+    if vehicle == nil or vehicle == 0 then return false end
     
     return IsPedInVehicle(ped, vehicle)
 end
