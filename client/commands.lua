@@ -1,24 +1,42 @@
 
 
 if Config.debug then
-
-    -- Test functionality for the object filter
-    RegisterCommand('objects', function(source, args, rawCommand)
-        for o in ObjectIterator() do print('object', o) end
-        for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do print('bus stops', o) end
-        for o in ObjectIterator(ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)) do print('within 5m', o) end
-        
-        for o in ObjectIterator(
-                        ObjectFilter.model(BusStop.Models,
-                            ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)
-                        )
-                    ) do 
-            print('within 5m', o) 
+    
+    potentialStops = {}
+    RegisterCommand('findStops', function(source, args, rawCommand)
+        for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do
+            local hash = sha1.hex(tostring(identifingCoordinate))
+            local model = GetEntityModel(o)
+            local coords = GetEntityCoords(o)
+            local heading = GetEntityHeading(o)
+            local blip = CreateBlip(513, coords, "Stop Model", 0.5, {r=255,g=0,b=0})
+            potentialStops[hash] = {
+                hash = hash,
+                model = model,
+                coords = coords,
+                heading = heading,
+                blip = blip
+            }
         end
     end)
 
+    -- Test functionality for the object filter
+    -- RegisterCommand('objects', function(source, args, rawCommand)
+    --     for o in ObjectIterator() do print('object', o) end
+    --     for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do print('bus stops', o) end
+    --     for o in ObjectIterator(ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)) do print('within 5m', o) end
+    --     
+    --     for o in ObjectIterator(
+    --                     ObjectFilter.model(BusStop.Models,
+    --                         ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)
+    --                     )
+    --                 ) do 
+    --         print('within 5m', o) 
+    --     end
+    -- end)
+
     -- Teleports the user to the next stop
-    RegisterCommand('next_stop', function(source, args, rawCommand)
+    RegisterCommand('nextStop', function(source, args, rawCommand)
         if not Job.active then
             print('cannot skip, you are not on a route')
             TriggerEvent('chat:addMessage', {
@@ -97,22 +115,8 @@ if Config.debug then
         });
     end)
 
-    -- Finds all the stops
-    RegisterCommand('find_stops', function(source, args, rawCommand)
-        if DEBUG_FindStops then 
-            DEBUG_FindStops = false
-        else
-            DEBUG_FindStops = true
-        end
-
-        TriggerEvent('chat:addMessage', {
-            template = 'Find stops has been toggled to {0}',
-            args = {  DEBUG_FindStops }
-        });
-    end)
-
     -- Registers a particular bus stop at the players location
-    RegisterCommand('create_stop', function(source, args, rawCommand)
+    RegisterCommand('createStop', function(source, args, rawCommand)
         local ped = GetPlayerPed(source)
         local vehicle = GetVehiclePedIsIn(ped, false)
         local entity = ped
@@ -164,7 +168,4 @@ if Config.debug then
         end)
 
     end, false)
-    TriggerEvent('chat:addSuggestion', '/create_stop', 'Adds a stop', {
-        {name = 'name', help = 'The name of the stop'}
-    })
 end
