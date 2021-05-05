@@ -9,7 +9,7 @@ Config.stopColor = { r = 148, g = 0, b = 211 } -- The colour for the markers
 
 Config.deposit = 200                -- How much the buses cost. The player get this back if they return the bus
 Config.earningBase = 0              -- How many dollars does the player get from just completing the job.
-Config.earningPerKM = 0.025         -- How many dollars per km does a route earn. 0.1 gives about 400/10minutes. 
+Config.earningPerKM = 0.1           -- How many dollars per km does a route earn. 0.1 gives about 400/10minutes. 
                                     --      Distance of route is calculated "as the bird flys", use the
                                     --      route "multiplier" in the database to account for this.
                                     --      Try either 0.05 or 0.025
