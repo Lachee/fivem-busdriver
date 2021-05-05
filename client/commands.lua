@@ -4,11 +4,11 @@ if Config.debug then
 
     -- Test functionality for the object filter
     RegisterCommand('objects', function(source, args, rawCommand)
-        for _, o in ObjectIterator() do print('object', o) end
-        for _, o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do print('bus stops', o) end
-        for _, o in ObjectIterator(ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)) do print('within 5m', o) end
+        for o in ObjectIterator() do print('object', o) end
+        for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do print('bus stops', o) end
+        for o in ObjectIterator(ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)) do print('within 5m', o) end
         
-        for _, o in ObjectIterator(
+        for o in ObjectIterator(
                         ObjectFilter.model(BusStop.Models,
                             ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)
                         )

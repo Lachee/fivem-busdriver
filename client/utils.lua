@@ -242,6 +242,7 @@ ClearVehiclesInArea = function(coords, radius)
 end
 
 --- Iterates over all the objects in the world
+-- Don't use this to filter for specific vehicles or peds as better functionality exists for those with FindFirstVehicle and FindFirstPed
 -- @params filter a callback to be executed for ever object found. Use something like ObjectFilter.model
 ObjectIterator = function(filter)
     local handle, next = FindFirstObject()
@@ -281,7 +282,7 @@ end
 --  The last element is always the optional child filter that get's AND
 ObjectFilter = {
     --- Filters objects to a list of models
-    model = function(models, filter) {
+    model = function(models, filter)
         hashes = {}
         if type(models) == 'string' then 
             hashes[GetHashKey(models)] = models
@@ -297,7 +298,7 @@ ObjectFilter = {
             return hashes[hash] ~= nil and 
                     (filter == nil or filter(object))
         end
-    },
+    end,
     --- Filter objects to within the range of coordinates
     range = function(coordinates, range, filter) 
         local coords = vector3(coordinates.x, coordinates.y, coordinates.z)
@@ -332,7 +333,7 @@ ObjectFilter = {
     --- Inverts the filter
     -- Its probably better to just make your own filter instead of using this.
     -- ObjectFilter.not(ObjectFilter.dead())
-    not = function(filter) 
+    ['not'] = function(filter) 
         if filter == nil then 
             print('error: filter cannot be nil for NOT')
             return nil
