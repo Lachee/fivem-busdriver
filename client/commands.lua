@@ -2,22 +2,13 @@
 
 if Config.debug then
     
-    potentialStops = {}
     RegisterCommand('findStops', function(source, args, rawCommand)
-        for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do
-            local hash = sha1.hex(tostring(identifingCoordinate))
-            local model = GetEntityModel(o)
-            local coords = GetEntityCoords(o)
-            local heading = GetEntityHeading(o)
-            local blip = CreateBlip(513, coords, "Stop Model", 0.5, {r=255,g=0,b=0})
-            potentialStops[hash] = {
-                hash = hash,
-                model = model,
-                coords = coords,
-                heading = heading,
-                blip = blip
-            }
-        end
+        local models = BusStop.FindAllModels(true)
+        print('found models: ', #models)
+        TriggerEvent('chat:addMessage', {
+            template = 'Showing {0} stops',
+            args = { #models }
+        });
     end)
 
     -- Test functionality for the object filter

@@ -10,8 +10,44 @@ BusStop.Stops = {}
 
 -- Finds the nearest bus stop model with 25m.
 --  Coords is optional
-BusStop.FindNearestModel = function(coords) 
-    return FindClosestObject(BusStop.Models, 25, coords)
+BusStop.FindNearestModel = function(coords, distance)
+    if distance == nil then distance = 25.0 end 
+    return FindClosestObject(BusStop.Models, distance, coords)
+end
+
+--- Finds all the models and create blips of them.
+-- This is a debug only function
+BusStop._debugFoundModels = {}
+BusStop.FindAllModels = function(blip)
+    if not Config.debug then return false end
+    if blip == nil then blip = false end
+
+    -- Iterate over all hte models
+    for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do
+        local model = GetEntityModel(o)
+        local coords = GetEntityCoords(o)
+        local heading = GetEntityHeading(o)
+        local hash = sha1.hex(tostring(coords))
+
+        if BusStop._debugFoundModels[hash] == nil then
+            BusStop._debugFoundModels[hash] = {
+                object = o,
+                hash = hash,
+                model = model,
+                coords = coords,
+                heading = heading,
+                blip = nil
+            }
+        end
+
+        -- Create the blip
+        if blip and BusStop._debugFoundModels[hash].blip == nil then
+            BusStop._debugFoundModels[hash].blip = CreateBlip(513, coords, "Stop Model", 1.0, 6)
+        end
+    end
+
+    --return the list
+    return BusStop._debugFoundModels
 end
 
 -- Requests a new stop to be created
@@ -135,9 +171,7 @@ BusStop.Render = function(stop, color)
         local qRight = quat(stop.heading-90, vector3(0, 0, 1))
         DrawQuaternion(stopCoord, qForward, {r=255, g=0, b=0})
         DrawQuaternion(stopCoord, qRight, {r=0, g=255, b=0})
-        
-        DrawHeadingMarker(stopCoord, stop.heading, Config.stopDistanceLimit or 1.0, color)
-
+      
         local queueColor = { r=255, g=0, b=0 }
         if stop.hasQueue then queueColor = { r=0, g=255, b=0 } end
         DrawGroundedZoneMarker(BusStop.GetQueueCoords(stop), 1.0, queueColor)
@@ -146,6 +180,8 @@ end
 
 -- Drwas a rectangular zone marker, snapped ot the ground
 BusStop.DrawZone = function(coordinate, heading, color) 
+    if color == nil then color = Config.color or {r=255,g=255,b=0} end
+
     -- Draw the rectangle
     local depth = 0.5
     local height = 1.0
@@ -158,18 +194,10 @@ BusStop.DrawZone = function(coordinate, heading, color)
     local hasGround, groundZ, normal = GetGroundZAndNormalFor_3dCoord(position.x, position.y, position.z, 0)
     if hasGround then 
         position.z = groundZ - depth
-        
-        -- if Config.debug and DEBUG_FindStops then
-        --     local qHeading = quat(heading, vector3(0, 0, 1))
-        --     DrawQuaternion(coordinate, qHeading, {r=255, g=0, b=0})
-        --     
-        --     local qRoad = quat(vector3(0, 1, 0), normal)
-        --     DrawQuaternion(coordinate, qRoad, {r=0, g=255, b=0})
--- 
-        --     -- We need to rotate qRoad 90deg in the direction of qHeading
-        --     local qNew = qRoad * quat(90, vector3(1, 0, 0))
-        --     DrawQuaternion(coordinate, qNew, {r=0, g=0, b=255})
-        -- end
+    end
+
+    if Config.debug then          
+        DrawHeadingMarker(coordinate, heading, Config.stopDistanceLimit or 1.0, color)
     end
 
     DrawMarker(43, 

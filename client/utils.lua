@@ -129,7 +129,7 @@ DrawQuaternion = function(from, q, color, scale)
     -- local too = position + q
     --from = GetEntityCoords(PlayerPedId())
 
-    local dir = (q * vector3(0, 1, 0))
+    local dir = norm(q * vector3(0, 1, 0))
     local too = vector3(from.x + (dir.x * scale), from.y + (dir.y * scale), from.z + (dir.z * scale))
     DrawLine(
         from.x, from.y, from.z,
@@ -143,6 +143,19 @@ DrawQuaternion = function(from, q, color, scale)
         from.x, from.y, from.z,
         too.x, too.y, too.z,
         255, 0, 255, 1.0
+    )
+end
+
+DrawRay = function(coord, dir, color)
+    DrawLineMarker(coord, coord + dir, color)
+end
+
+DrawLineMarker = function(from, too, color) 
+    if color == nil then color = {r=255,b=255,g=255} end
+    DrawLine(
+        from.x, from.y, from.z,
+        too.x, too.y, too.z,
+        color.r, color.g, color.b, color.a or 1.0
     )
 end
 
