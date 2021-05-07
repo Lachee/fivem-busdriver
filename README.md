@@ -26,3 +26,7 @@ Then in you server cfg:
 - `ensure lachee-busdriver`
 
 **Ensure you migrate your database with the `sql/*.sql` scripts.**
+
+
+# TODO
+Add timeout to bus embarkment so it doesnt get stuck
