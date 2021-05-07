@@ -2,7 +2,7 @@ print("Loading Lachee's Bus Driver")
 
 -- Master Config
 Config = { }
-Config.debug = false -- Debug visualisation
+Config.debug = true -- Debug visualisation
 
 Config.coordinates = vector4( 472.2, -592.5, 28.5, 175.28) -- Coordinates to start the job
 Config.stopColor = { r = 148, g = 0, b = 211 } -- The colour for the markers

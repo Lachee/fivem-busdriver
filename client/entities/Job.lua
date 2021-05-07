@@ -344,6 +344,8 @@ Job.Begin = function(callback)
         Job.isBoarding = false
         Route.ShowBlips(Job.route)
 
+        print(ESX.DumpTable(Job.route.stops))
+
         --Route.SetGps(Job.route)
         
         -- TODO: Trigger Bond Deposit

@@ -109,6 +109,8 @@ Route.GetRandomRoute = function(type, callback)
         params = {}
     end
 
+    -- DEBUG
+    query = 'SELECT id FROM lachee_bus_routes WHERE id = 2 LIMIT 1'
 
     MySQL.Async.fetchAll(query, params, function(results)
         if #results >= 1 then

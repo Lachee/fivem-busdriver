@@ -28,7 +28,7 @@ CREATE TABLE `lachee_bus_routes` (
 
 INSERT INTO `lachee_bus_routes` (`id`, `name`, `multiplier`, `minimum_grade`, `type`, `route`) VALUES
 (1, 'Sandy Shores X-Press', 1.25, 0, 'rural', '[ 38, 40, 38 ]'),
-(2, 'Small Metro Route', 0.8, 0, 'metro', '[ 3, 5, 6, 11, 38 ]'),
+(2, 'Small Metro Route', 0.8, 0, 'metro', '[ 3, 5, 6, 8, 38 ]'),
 (3, 'Long Beach Route', 1, 0, 'metro', '[ 27, 28, 29, 30, 36, 37, 49, 14, 8, 38 ]'),
 (4, 'Long Rural Route', 1.5, 0, 'rural', '[ 38, 40, 41, 46, 45, 38 ]'),
 (5, 'Industry', 1, 0, 'metro', '[ 50, 25, 24, 22, 18, 16, 38 ]'),
