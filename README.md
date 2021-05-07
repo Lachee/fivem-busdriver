@@ -6,6 +6,8 @@ All the routes and stops are defined in a database.
 This script was written from scratch as practice for the up coming delivery driver job I wish to write.
 
 
+[Demo Video](https://i.lu.je/2021/KB42yjJCZf.mp4)
+
 # Installation
 ## Requirements
 - FiveM
