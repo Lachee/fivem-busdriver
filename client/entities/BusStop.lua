@@ -130,7 +130,6 @@ BusStop.ShowBlip = function(stop, visible, color)
     -- Ensure the blip exists
     if BusStop.blips[stop.hash] == nil then
         local coords = stop.coords or stop
-        print('creating blip', stop.hash)
         BusStop.blips[stop.hash] = {
             blip = CreateBlip(513, coords, "Bus Stop", 0.9, BlipColor.White),
             visible = true,

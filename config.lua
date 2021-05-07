@@ -2,7 +2,7 @@ print("Loading Lachee's Bus Driver")
 
 -- Master Config
 Config = { }
-Config.debug = true -- Debug visualisation
+Config.debug = false -- Debug visualisation
 
 Config.coordinates = vector4( 472.2, -592.5, 28.5, 175.28) -- Coordinates to start the job
 Config.stopColor = { r = 148, g = 0, b = 211 } -- The colour for the markers
@@ -18,7 +18,7 @@ Config.earningPerStop = 10          -- How many dollars per stop extra does the 
                                     --      about 20*0.25, or $5
 Config.earningIncludesDepo = true   -- Does the travel time too and from the depo count?
 
-Config.alwaysRenderStops = true -- Always render the names of the stop when players approach, rather then just when there is a route active
+Config.alwaysRenderStops = false -- Always render the names of the stop when players approach, rather then just when there is a route active
 Config.alwaysShowBlips = false -- Always shows the bus stop blips
 
 Config.passengerRadius = 200.0 -- Distance before passengers are spawned

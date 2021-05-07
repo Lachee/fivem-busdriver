@@ -137,6 +137,7 @@ Bus.CheckPassengersEmbarked = function()
 
         -- If the ped is dead, then remove them from our list and tell GTA to clean them up
         if Ped.IsDead(psg.ped) then
+            print('Ped died while waiting for embarkment')
             Ped.Remove(psg.ped)
             table.remove(Bus.passengers, i)
             return Bus.CheckPassengersEmbarked()
