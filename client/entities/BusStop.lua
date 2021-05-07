@@ -110,7 +110,7 @@ BusStop.FetchAllStops = function(callback)
         for i, stop in pairs(stops) do
             BusStop.stops[stop.hash] = stop
             if Config.debug or Config.alwaysShowBlips then
-                BusStop.ShowBlip(stop, true, BlipColor.DarkGray)
+                BusStop.ShowBlip(stop, true, BlipColor.White)
             end
         end
         if callback then  callback(BusStop.stops) end
@@ -222,9 +222,13 @@ end
 
 -- Renders all the available stops
 BusStop.RenderAll = function(color)
+    local coords = GetEntityCoords(PlayerPedId())
     for hash, stop in pairs(BusStop.stops) do
-        BusStop.Render(stop, color)
-    end
+        local distance = #(BusStop.GetStopCoords(stop) - coords)
+        if distance <= 100 then
+            BusStop.Render(stop, color)
+        end
+    end 
 end
 
 -- Render a specific stop. Color is optional

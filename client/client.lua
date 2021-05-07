@@ -142,7 +142,7 @@ Citizen.CreateThread(function()
 end)
 
 -- Draw the debug visualisations
-if Config.debug then
+if Config.debug and false then
     Citizen.CreateThread(function()
         local frame = 0
         local roadCoords = vector3(0,0,0)
@@ -150,6 +150,7 @@ if Config.debug then
         local sidePointCoords = vector3(0,0,0)
         local foundSidePoint = false
         local models = {}
+
         while true do
             Citizen.Wait(10)
             
@@ -162,61 +163,64 @@ if Config.debug then
             -- Get the closest model
             --local obj = BusStop.FindNearestModel(GetEntityCoords(PlayerPedId()), 200.0)
             for _, m in pairs(models) do
-                local obj = m.object
-                --if obj ~= nil and obj ~= 0 then
-                    --Get the stop coords
-                local coords = m.coords
-                local heading = (m.heading + 90) % 360
-                DrawHeadingMarker(coords+vector3(0,0,.1), heading, 1.0, {r=0,g=255,b=255})
+                if BusStop.stops[m.hash] == nil then
 
-                --Get the road coords
-                --if frame % 1 == 0 then
-                    --foundRoad, roadCoords = GetNthClosestVehicleNode(coords.x, coords.y, coords.z, 1, 0, 0, 0)
-                    foundSidePoint, sidePointCoords = GetRoadSidePointWithHeading(coords.x, coords.y, coords.z, heading-90)
-                --end
+                    local obj = m.object
+                    --if obj ~= nil and obj ~= 0 then
+                        --Get the stop coords
+                    local coords = m.coords
+                    local heading = (m.heading + 90) % 360
+                    DrawHeadingMarker(coords+vector3(0,0,.1), heading, 1.0, {r=0,g=255,b=255})
 
-                if foundRoad then
-                    DrawLineMarker(roadCoords, coords, {r=255,g=0,b=255})
-                    DrawZoneMarker(roadCoords, 0.1, {r=255,g=0,b=255})
-                end
+                    --Get the road coords
+                    --if frame % 1 == 0 then
+                        --foundRoad, roadCoords = GetNthClosestVehicleNode(coords.x, coords.y, coords.z, 1, 0, 0, 0)
+                        foundSidePoint, sidePointCoords = GetRoadSidePointWithHeading(coords.x, coords.y, coords.z, heading-90)
+                    --end
 
-                -- Side Point
-                if foundSidePoint then
-                    DrawLineMarker(sidePointCoords, coords, {r=0,g=0,b=255})
-                    DrawZoneMarker(sidePointCoords, 0.1, {r=0,g=0,b=255})
-                    
-                    -- Origin X, Y, Z
-                    -- DrawRay(coords + vector3(0,0,0.5), vector3(1, 0, 0), {r=255,g=0,b=0})
-                    -- DrawRay(coords + vector3(0,0,0.5), vector3(0, 1, 0), {r=0,g=255,b=0})
-                    -- DrawRay(coords + vector3(0,0,0.5), vector3(0, 0, 1), {r=0,g=0,b=255})
+                    if foundRoad then
+                        DrawLineMarker(roadCoords, coords, {r=255,g=0,b=255})
+                        DrawZoneMarker(roadCoords, 0.1, {r=255,g=0,b=255})
+                    end
 
-                    -- Prepare the directions
-                    local differenceBetweenCoords = sidePointCoords - coords
-                    local directionToSidePoint = norm(vector3(differenceBetweenCoords.x, differenceBetweenCoords.y, 0))
-                    -- DrawRay(coords, directionToSidePoint, {r=255,g=0,b=0})
-            
-                    local directionFromHeading = norm(quat(heading, vector3(0,0,1)) * vector3(0, 1, 0))
-                    directionFromHeading = norm(vector3(directionFromHeading.x, directionFromHeading.y, 0))
-                    -- DrawRay(coords, directionFromHeading, {r=255,g=255,b=255})
+                    -- Side Point
+                    if foundSidePoint then
+                        DrawLineMarker(sidePointCoords, coords, {r=0,g=0,b=255})
+                        DrawZoneMarker(sidePointCoords, 0.1, {r=0,g=0,b=255})
+                        
+                        -- Origin X, Y, Z
+                        -- DrawRay(coords + vector3(0,0,0.5), vector3(1, 0, 0), {r=255,g=0,b=0})
+                        -- DrawRay(coords + vector3(0,0,0.5), vector3(0, 1, 0), {r=0,g=255,b=0})
+                        -- DrawRay(coords + vector3(0,0,0.5), vector3(0, 0, 1), {r=0,g=0,b=255})
 
-                    -- Get the angle between them and use that to calculate the offset from the road
-                    local roadOffsetDistanceCap = 7.0
-                    local angleBetweenDirections = angleFromToo(directionFromHeading, directionToSidePoint)
-                    local roadOffsetDistance = math.sin(angleBetweenDirections) * #differenceBetweenCoords
-                    if roadOffsetDistance > roadOffsetDistanceCap then roadOffsetDistance = roadOffsetDistanceCap end
-                    local roadOffsetDirection = norm(quat(heading + 90, vector3(0, 0, 1)) * vector3(0, 1, 0))
-                    local roadOffsetCoords = coords + (roadOffsetDirection * roadOffsetDistance)
-                    -- DrawRay(coords + vector3(0, 0, 0.5), roadOffsetDirection, {r=255,g=0,b=255})
-                    -- DrawZoneMarker(roadOffsetCoords, 0.25, {r=255, g=255, b=255})
+                        -- Prepare the directions
+                        local differenceBetweenCoords = sidePointCoords - coords
+                        local directionToSidePoint = norm(vector3(differenceBetweenCoords.x, differenceBetweenCoords.y, 0))
+                        -- DrawRay(coords, directionToSidePoint, {r=255,g=0,b=0})
+                
+                        local directionFromHeading = norm(quat(heading, vector3(0,0,1)) * vector3(0, 1, 0))
+                        directionFromHeading = norm(vector3(directionFromHeading.x, directionFromHeading.y, 0))
+                        -- DrawRay(coords, directionFromHeading, {r=255,g=255,b=255})
 
-                    -- Determine the best spot for the bus zone
-                    local busZoneCoords = roadOffsetCoords
-                                            + (roadOffsetDirection * BusStop.SIZE.width * 0.5) 
-                                            - (directionFromHeading * BusStop.SIZE.length * 0.35)
-                                            + vector3(0, 0, 1)
-                                            
-                    DrawHeadingMarker(busZoneCoords, heading, 1.0, {r=255,g=255,b=0})                                                  
-                    BusStop.DrawZone(busZoneCoords, heading, {r=255,g=255,b=0})
+                        -- Get the angle between them and use that to calculate the offset from the road
+                        local roadOffsetDistanceCap = 7.0
+                        local angleBetweenDirections = angleFromToo(directionFromHeading, directionToSidePoint)
+                        local roadOffsetDistance = math.sin(angleBetweenDirections) * #differenceBetweenCoords
+                        if roadOffsetDistance > roadOffsetDistanceCap then roadOffsetDistance = roadOffsetDistanceCap end
+                        local roadOffsetDirection = norm(quat(heading + 90, vector3(0, 0, 1)) * vector3(0, 1, 0))
+                        local roadOffsetCoords = coords + (roadOffsetDirection * roadOffsetDistance)
+                        -- DrawRay(coords + vector3(0, 0, 0.5), roadOffsetDirection, {r=255,g=0,b=255})
+                        -- DrawZoneMarker(roadOffsetCoords, 0.25, {r=255, g=255, b=255})
+
+                        -- Determine the best spot for the bus zone
+                        local busZoneCoords = roadOffsetCoords
+                                                + (roadOffsetDirection * BusStop.SIZE.width * 0.5) 
+                                                - (directionFromHeading * BusStop.SIZE.length * 0.35)
+                                                + vector3(0, 0, 1)
+                                                
+                        DrawHeadingMarker(busZoneCoords, heading, 1.0, {r=255,g=255,b=0})                                                  
+                        BusStop.DrawZone(busZoneCoords, heading, {r=255,g=255,b=0})
+                    end
                 end
             end
         end

@@ -117,8 +117,10 @@ end
 Bus.RemovePassenger = function(passenger)
     if teleport == nil then teleport = false end
     local i, psg = Bus.GetPassenger(passenger)
-    psg.isLeaving = true
-    Ped.ExitVehicle(psg.ped, 256, Bus.current)
+    if psg ~= nil then
+        psg.isLeaving = true
+        Ped.ExitVehicle(psg.ped, 256, Bus.current)
+    end
 end
 
 
