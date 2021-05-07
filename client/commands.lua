@@ -14,11 +14,11 @@ if Config.debug then
     -- Test functionality for the object filter
     -- RegisterCommand('objects', function(source, args, rawCommand)
     --     for o in ObjectIterator() do print('object', o) end
-    --     for o in ObjectIterator(ObjectFilter.model(BusStop.Models)) do print('bus stops', o) end
+    --     for o in ObjectIterator(ObjectFilter.model(BusStop.MODELS)) do print('bus stops', o) end
     --     for o in ObjectIterator(ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)) do print('within 5m', o) end
     --     
     --     for o in ObjectIterator(
-    --                     ObjectFilter.model(BusStop.Models,
+    --                     ObjectFilter.model(BusStop.MODELS,
     --                         ObjectFilter.range(GetEntityCoords(PlayerPedId()), 5.0)
     --                     )
     --                 ) do 
@@ -118,45 +118,133 @@ if Config.debug then
         -- Prepare the coordinate
         local coordinates = GetEntityCoords(entity)
         local heading = GetEntityHeading(entity)
+        local hash = BusStop.CalculateHash(coordinates)
+
+        -- Update the hash if we are able to find the model.
+        -- Additionally, update our heading.
+        local object = BusStop.FindNearestModel(coordinates)
+        if object ~= 0 and object ~= nil then 
+            hash = BusStop.CalculateHash(GetEntityCoords(object))
+            coordinates, heading = BusStop.GetEstimatedBestCoords(object)
+        end
 
         -- Prepare the name
-        local name = ''
-        if #args == 0 then
-            local directions = { N = 360, 0, NE = 315, E = 270, SE = 225, S = 180, SW = 135, W = 90, NW = 45 }
-            local var1, var2 = GetStreetNameAtCoord(coordinates.x, coordinates.y, coordinates.z, Citizen.ResultAsInteger(), Citizen.ResultAsInteger())
-            local hash1 = GetStreetNameFromHashKey(var1);
-            local hash2 = GetStreetNameFromHashKey(var2);
-            local dir = ''
-            for k, v in pairs(directions) do
-                if (math.abs(heading - v) < 22.5) then
-                    dir = k;
-                    if (dir == 1) then
-                        dir = 'N';
-                        break;
-                    end
-                    break;
-                end
-            end
-            name = hash1 .. ' ' .. hash2 .. ' ' .. dir
-        else
+        local name = nil
+        if #args == 1 then
             name = args[1]
         end
 
-        -- Prepare the identifying coordinates
-        local identifyingCoordinates = coordinates
-        local model = BusStop.FindNearestModel()
-        if model then 
-            identifyingCoordinates = GetEntityCoords(model) 
-            heading = GetEntityHeading(model) + 90
-        end
+        -- Create the stop object
+        local stop = {
+            hash = hash,
+            x = coordinates.x,
+            y = coordinates.y,
+            z = coordinates.z,
+            heading = heading,
+            qx = 0,
+            qy = 0,
+            qz = 0,
+            name = name,
+            type = 'metro',
+            clear = 0
+        }
 
-        -- Request the stop
-        BusStop.RequestCreateStop(identifyingCoordinates, coordinates, heading, name, function(hash) 
+        -- Create the stop
+        BusStop.CreateStop(stop, function(count) 
             TriggerEvent('chat:addMessage', {
-                template = 'Bus stop {0} has been created',
-                args = { hash }
+                template = 'Bus stop has been created: {0}',
+                args = { count }
             });
         end)
-
     end, false)
+
+    -- Sets the queue for the closest bus stop
+    RegisterCommand('setQueue', function(source, args, rawCommand)
+        local ped = GetPlayerPed(source)
+        local coords = GetEntityCoords(ped)
+        
+        -- Find the object
+        -- TODO: Check by ID instead if we cannot find a model
+        local object = BusStop.FindNearestModel(coords)
+        if object == 0 or object == nil then 
+            TriggerEvent('chat:addMessage', {
+                template = 'There is currently no stop nearby',
+                args = {  }
+            });
+            return
+        end
+            
+        -- Get the hash and send a update request
+        local stop = {
+            hash = BusStop.CalculateHash(GetEntityCoords(object)),
+            qx = coords.x,
+            qy = coords.y,
+            qz = coords.z,
+        }
+        
+        -- Perform the update
+        BusStop.UpdateStop(stop, function(success)
+            if success then
+                TriggerEvent('chat:addMessage', {
+                    template = 'Updated the stop',
+                    args = { }
+                });
+            else 
+                TriggerEvent('chat:addMessage', {
+                    template = 'Failed to update the stop. Has it been created first?',
+                    args = { }
+                });
+            end
+        end)
+    end)
+
+    
+    -- Sets the zone for the closest bus stop
+    RegisterCommand('setZone', function(source, args, rawCommand)
+        local ped = GetPlayerPed(source)
+        local vehicle = GetVehiclePedIsIn(ped, false)
+        local entity = ped
+        if vehicle ~= 0 then
+            entity = vehicle
+        end
+
+        -- Prepare the coordinate
+        local coords = GetEntityCoords(entity)
+        local heading = GetEntityHeading(entity)
+        
+        -- Ensure the stop exists
+        -- TODO: Check by ID instead if we cannot find a model
+        local object = BusStop.FindNearestModel(coords)
+        if object == 0 or object == nil then 
+            TriggerEvent('chat:addMessage', {
+                template = 'There is currently no stop nearby',
+                args = {  }
+            });
+            return
+        end
+            
+        -- Get the hash and send a update request
+        local stop = {
+            hash    = BusStop.CalculateHash(GetEntityCoords(object)),
+            x       = coords.x,
+            y       = coords.y,
+            z       = coords.z,
+            heading = heading,
+        }
+        
+        -- Perform the update
+        BusStop.UpdateStop(stop, function(success)
+            if success then
+                TriggerEvent('chat:addMessage', {
+                    template = 'Updated the stop',
+                    args = { }
+                });
+            else 
+                TriggerEvent('chat:addMessage', {
+                    template = 'Failed to update the stop. Has it been created first?',
+                    args = { }
+                });
+            end
+        end)
+    end)
 end

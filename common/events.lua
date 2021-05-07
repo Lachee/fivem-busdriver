@@ -1,6 +1,7 @@
 E = {
     CreateBusStop = 'lacheebus:createBusStop',  -- Request to create a bus stop
     GetBusStops = 'lacheebus:requestBusStops',  -- Requests all bus stops
+    UpdateBusStop = 'lacheebus:updateBusStop',  -- REquest to update the bus stop
 
     GetRoutes = 'lacheebus:requestRoutes',          -- Gets a list of routes
     GetRoute = 'lacheebus:requestSpecificRoute',    -- Gets a specific route

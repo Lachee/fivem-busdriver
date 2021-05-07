@@ -6,6 +6,7 @@ function table.indexOf(t, object)
             return i
         end
     end
+    return false
 end
 
 -- table.filter({"a", "b", "c", "d"}, function(o, k, i) return o >= "c" end)  --> {"c","d"}

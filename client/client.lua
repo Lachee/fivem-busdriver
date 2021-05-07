@@ -211,8 +211,8 @@ if Config.debug then
 
                     -- Determine the best spot for the bus zone
                     local busZoneCoords = roadOffsetCoords
-                                            + (roadOffsetDirection * BusStop.Size.width * 0.5) 
-                                            - (directionFromHeading * BusStop.Size.length * 0.35)
+                                            + (roadOffsetDirection * BusStop.SIZE.width * 0.5) 
+                                            - (directionFromHeading * BusStop.SIZE.length * 0.35)
                                             + vector3(0, 0, 1)
                                             
                     DrawHeadingMarker(busZoneCoords, heading, 1.0, {r=255,g=255,b=0})                                                  

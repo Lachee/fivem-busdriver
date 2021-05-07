@@ -211,8 +211,14 @@ EnableControlActions = function(group, controls, toggle)
     end
 end
 
--- Creates a blip and returns it. Scale and Color are optional
+--- Creates a blip and returns it. Scale and Color are optional.
+-- Use BlipColor constant for the colors
 CreateBlip = function(sprite, coords, name, scale, color) 
+    if coords == nil then 
+        Citizen.Trace('Cannot create blip because coords are nil') 
+        return false 
+    end
+
     local blip = AddBlipForCoord(coords.x+.0, coords.y+.0, coords.z+.0)
     SetBlipSprite(blip, sprite)
     SetBlipDisplay(blip, 4)
@@ -352,7 +358,7 @@ ObjectFilter = {
             return nil
         end
         return function(object)
-            return ~filter(object)
+            return not filter(object)
         end
     end
 }

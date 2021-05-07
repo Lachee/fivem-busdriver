@@ -13,7 +13,7 @@ end
 -- Show the blips for all the stops we plan to make
 Route.ShowBlips = function(route)
     for _, s in pairs(route.stops) do
-        BusStop.ShowBlip(s)
+        BusStop.ShowBlip(s, true, BlipColor.White)
     end
 end
 
