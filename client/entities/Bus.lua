@@ -243,9 +243,14 @@ end
 Bus.GetBusInfoFromRoute = function(routeType)
     if routeType == 'metro' then     return { type = routeType, model = 'bus', capacity = 15, doors = {0, 1, 2, 3 }} end
     if routeType == 'terminal' then  return { type = routeType, model = 'airbus', capacity = 15, doors = {0, 1, 2, 3 }} end
+    if routeType == 'airport' then  return { type = routeType, model = 'airbus', capacity = 15, doors = {0, 1, 2, 3 }} end
+
     if routeType == 'rural' then     return { type = routeType, model = 'coach', capacity = 9, doors = { 0 } } end
+    
     if routeType == 'party' then     return { type = routeType, model = 'pbus2', capacity = 9, doors = { 0 }  } end
+    
     if routeType == 'tour' then      return { type = routeType, model = 'tourbus', capacity = 8, doors = { 2, 3 }} end
+    
     if routeType == 'rental' then    return { type = routeType, model = 'rentalbus', capacity = 8, doors = { 2, 3 }} end
     return nil
 end

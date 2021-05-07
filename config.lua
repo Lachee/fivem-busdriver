@@ -18,7 +18,7 @@ Config.earningPerStop = 10          -- How many dollars per stop extra does the 
                                     --      about 20*0.25, or $5
 Config.earningIncludesDepo = true   -- Does the travel time too and from the depo count?
 
-Config.alwaysRenderStops = false -- Always render the names of the stop when players approach, rather then just when there is a route active
+Config.alwaysRenderStops = Config.debug -- Always render the names of the stop when players approach, rather then just when there is a route active
 Config.alwaysShowBlips = false -- Always shows the bus stop blips
 
 Config.passengerRadius = 200.0 -- Distance before passengers are spawned

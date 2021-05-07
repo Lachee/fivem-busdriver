@@ -112,7 +112,7 @@ Route.GetRandomRoute = function(type, callback)
 
     MySQL.Async.fetchAll(query, params, function(results)
         if #results >= 1 then
-            print('Found a random route', results[1].id)
+            print('Found a random route', results[1].id, results[1].name, results[1].type)
             Route.GetRoute(results[1].id, callback)
         else 
             print('Found no route')
