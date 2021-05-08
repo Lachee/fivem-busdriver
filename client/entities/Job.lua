@@ -253,8 +253,9 @@ Job.EmbarkPassengers = function(callback)
 
     -- Wait till they are all on the bus
     print('Job', 'waiting for passengers to embark')
-    while not Bus.CheckPassengersEmbarked() do
-        Citizen.Wait(250) 
+    local stopwatch = Stopwatch.Start()
+    while not Bus.CheckPassengersEmbarked() and stopwatch:elapsed() < Config.pedVehicleTimeout do
+        Citizen.Wait(100) 
     end
 
     -- Finally callback
@@ -273,14 +274,10 @@ Job.DisembarkPassengers = function(callback)
         end
     end
 
-    local disembarkAttempts = 100
 
     -- Wait for them to leave
-    while not Bus.CheckPassengersDisembarked(function(passenger) 
-        -- Tell the ped to wander around. We dont care.
-        Ped.WanderAway(passenger.ped)
-    end) and disembarkAttempts >=0 do 
-        disembarkAttempts = disembarkAttempts - 1
+    local stopwatch = Stopwatch.Start()
+    while not Bus.CheckPassengersDisembarked(function(passenger) Ped.WanderAway(passenger.ped) end) and stopwatch:elapsed() < Config.pedVehicleTimeout do
         Citizen.Wait(100) 
     end
     
