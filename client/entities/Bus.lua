@@ -221,7 +221,7 @@ Bus.Create = function(type, coordsHeading, callback)
         Bus.passengers = {}
         Bus.CloseDoors(true)
         Bus.SetFuel(100)
-        exports["LegacyFuel"]:SetFuel(vehicle, 100)
+        if exports["LegacyFuel"] ~= nil then exports["LegacyFuel"]:SetFuel(vehicle, 100) end
         callback(Bus.current)
     end)
 end
