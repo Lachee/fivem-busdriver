@@ -10,7 +10,7 @@ Job.isBoarding = false
 Job.isRouteFinished = false
 
 -- Internal update loop
-Job.Process = function() 
+Job.Process = function()
     if not Job.active then return end
 
     local stop = Job.GetNextStop()
@@ -20,7 +20,7 @@ Job.Process = function()
             ESX.ShowHelpNotification("Get back into your bus.", true, false)
             return
         end
-        
+
         -- Determine how far away we are
         local stopCoords = vector3(stop.x+.0, stop.y+.0, stop.z+.0)
         local coords = GetEntityCoords(Bus.current)
@@ -29,7 +29,7 @@ Job.Process = function()
         local headingDiff = (heading - stop.heading + 180 + 360) % 360 - 180
 
         -- Determine if we can preload
-        if distance <= Config.passengerRadius then
+        if distance <= (Config.passengerRadius + 0.0) then
             Job.PreloadPeds()
         end
 
@@ -43,8 +43,8 @@ Job.Process = function()
 
         -- Determine if we can pickup passengers
         Job.canBoardPassengers = false
-        if distance <= Config.stopDistanceLimit then
-            if headingDiff <= Config.stopHeadingLimit and headingDiff >= -Config.stopHeadingLimit then
+        if distance <= (Config.stopDistanceLimit + 0.0) then
+            if headingDiff <= (Config.stopHeadingLimit + 0.0) and headingDiff >= -(Config.stopHeadingLimit + 0.0) then
                 Job.canBoardPassengers = true
             end
         end
@@ -90,8 +90,8 @@ Job.Process = function()
             -- We are not boarding and we pressed the board button, we should perform the board logic
             if not Job.isBoarding and IsControlJustPressed(0, Controls.INPUT_CONTEXT) then
                 Job.isBoarding = true
-                Citizen.CreateThread(function() 
-  
+                Citizen.CreateThread(function()
+
                     ESX.ShowNotification('Disembarking Passengers...', true, false, 60)
                     Job.DisembarkPassengers()
 
@@ -103,7 +103,7 @@ Job.Process = function()
                     Job.EmbarkPassengers()
 
                     -- Close the door, show the notif and play a sound
-                    
+
                     Citizen.Wait(1000)
                     Bus.CloseDoors()
                     Citizen.Wait(500)
@@ -133,7 +133,7 @@ Job.Process = function()
             } , true)
 
         end
-        
+
         -- We are boarding, wait
         if Job.isBoarding then
             ESX.ShowHelpNotification('Wait for passengers', true, false)
@@ -145,20 +145,20 @@ Job.Process = function()
             end
         end
     end
-    
+
     if Job.isRouteFinished then
         -- We need to clean up
         ESX.ShowHelpNotification('Return the bus to the ~y~depo', true, false)
     end
-    
+
 end
 
 -- Loads all the passengers if able
 Job.PreloadPeds = function()
     -- Make sure we have a stop
-    local stop = Job.GetNextStop()  
+    local stop = Job.GetNextStop()
     if stop == nil then return false end
-    
+
     -- Get the coordinates of the stop
     local stopCoords = BusStop.GetStopCoords(stop)
     local queueCoords =  BusStop.GetQueueCoords(stop)
@@ -168,25 +168,25 @@ Job.PreloadPeds = function()
 
     -- Perform the preload
     Job.preloadedPeds = {}
-    Citizen.CreateThread(function() 
+    Citizen.CreateThread(function()
         print('Job', 'Preload Begin')
 
         -- Spawn passenger
         for i,destination in pairs(stop.passengers) do
             -- TODO: Randomise a bit where they spawn
-            
+
             -- Determine where to spawn them
             local randomRadius = 50.0
             local randVector = vector3(math.random(-randomRadius, randomRadius), math.random(-randomRadius, randomRadius), 0)
             local checkVector = stopCoords + randVector
             local isSafe, spawnCoords = GetSafeCoordForPed(checkVector.x, checkVector.y, checkVector.z, true, 1)
             if not isSafe then spawnCoords = stopCoords end
-            
+
             -- Spawn the ped
             local ped = Ped.SpawnRandom(spawnCoords)
             if ped ~= nil then
                 print("Ped Spawned", ped)
-                
+
                 Citizen.Wait(100)
                 Ped.NavigateTo(ped, queueCoords, Ped.RUN, 0.5)
                 table.insert(Job.preloadedPeds, { ped = ped, destination = destination })
@@ -200,10 +200,10 @@ Job.PreloadPeds = function()
 end
 
 -- Goes to the next stop
-Job.NextStop = function() 
+Job.NextStop = function()
     -- Clean up the previous stop
     local prevStop = Job.GetNextStop()
-    if prevStop ~= nil then 
+    if prevStop ~= nil then
         BusStop.HideBlip(prevStop)
     end
 
@@ -224,9 +224,9 @@ end
 -- Tells the passengers to get on
 Job.EmbarkPassengers = function(callback)
     local stop = Job.GetNextStop()
-    if not stop then 
+    if not stop then
         print('Job', 'failure: stop does not exist')
-        return false 
+        return false
     end
 
     -- Wait to preload the peds
@@ -241,7 +241,7 @@ Job.EmbarkPassengers = function(callback)
     Job.boardingPeds = {}
     for i, pp in pairs(Job.preloadedPeds) do
         local passenger, seat = Bus.AddPassenger(pp.ped)
-        if passenger ~= nil then 
+        if passenger ~= nil then
             -- Set hte destination
             Bus.SetPassengerDestination(passenger, pp.destination)
             table.insert(Job.boardingPeds, { ped = pp.ped, seat = pp.seat })
@@ -254,8 +254,8 @@ Job.EmbarkPassengers = function(callback)
     -- Wait till they are all on the bus
     print('Job', 'waiting for passengers to embark')
     local stopwatch = Stopwatch.Start()
-    while not Bus.CheckPassengersEmbarked() and stopwatch:elapsed() < Config.pedVehicleTimeout do
-        Citizen.Wait(100) 
+    while not Bus.CheckPassengersEmbarked() and stopwatch:elapsed() < (Config.pedVehicleTimeout + 0.0) do
+        Citizen.Wait(100)
     end
 
     -- Finally callback
@@ -277,10 +277,10 @@ Job.DisembarkPassengers = function(callback)
 
     -- Wait for them to leave
     local stopwatch = Stopwatch.Start()
-    while not Bus.CheckPassengersDisembarked(function(passenger) Ped.WanderAway(passenger.ped) end) and stopwatch:elapsed() < Config.pedVehicleTimeout do
-        Citizen.Wait(100) 
+    while not Bus.CheckPassengersDisembarked(function(passenger) Ped.WanderAway(passenger.ped) end) and stopwatch:elapsed() < (Config.pedVehicleTimeout + 0.0) do
+        Citizen.Wait(100)
     end
-    
+
     -- Cull the shits that wont leave
     Bus.Cull()
 
@@ -290,7 +290,7 @@ Job.DisembarkPassengers = function(callback)
 end
 
 -- Sets the waypoint to the current stop
-Job.SetWaypoint = function()    
+Job.SetWaypoint = function()
     local stop = Job.GetNextStop()
     if stop ~= nil then
         -- Set the waypoint to the stop
@@ -302,9 +302,9 @@ Job.SetWaypoint = function()
 end
 
 -- Teleports the bus to the next stop perfectly
-Job.Teleport = function()     
+Job.Teleport = function()
     local stop = Job.GetNextStop()
-    if not stop then 
+    if not stop then
         print('No stop available')
         return false
     end
@@ -317,10 +317,10 @@ Job.Teleport = function()
 end
 
 -- Begins the job
-Job.Begin = function(callback) 
+Job.Begin = function(callback)
     Job.active = true
 
-    ESX.TriggerServerCallback(E.BeginJob, function(route, message) 
+    ESX.TriggerServerCallback(E.BeginJob, function(route, message)
 
         -- Validate the route
         if route == nil then
@@ -333,7 +333,7 @@ Job.Begin = function(callback)
             Job.active = false
             return
         end
-        
+
         -- set the route and reset the stop counter
         Job.route = route
         Job.nextStop = 0
@@ -344,15 +344,15 @@ Job.Begin = function(callback)
         print(ESX.DumpTable(Job.route.stops))
 
         --Route.SetGps(Job.route)
-        
+
         -- TODO: Trigger Bond Deposit
-        
+
         -- Spawn a bus
-        Bus.Create(route.type, Config.coordinates, function(bus) 
-            if bus == nil then 
-                Job.End(false, true) 
+        Bus.Create(route.type, Config.coordinates, function(bus)
+            if bus == nil then
+                Job.End(false, true)
                 ESX.ShowNotification('~r~Your bus failed to spawn for some reason', true, true, 10)
-                return 
+                return
             end
 
             Ped.EnterVehicle(PlayerPedId(), bus, -1, Ped.TELEPORT)
@@ -367,10 +367,10 @@ Job.Begin = function(callback)
 end
 
 -- Ends the job
-Job.End = function(isForfeit, hasReturnedBus) 
+Job.End = function(isForfeit, hasReturnedBus)
     -- Disable the active state of the job
     Job.active = false
-    
+
     -- Calculate the route state
     local routeState = 0
     if hasReturnedBus then routeState = routeState + 1 end
@@ -378,7 +378,7 @@ Job.End = function(isForfeit, hasReturnedBus)
 
     -- We ended the job. Tell the server to clean us up
     print('Ending Job', Job.route.id, routeState)
-    ESX.TriggerServerCallback(E.EndJob, function(success, data) 
+    ESX.TriggerServerCallback(E.EndJob, function(success, data)
         -- Something fucky happened
         if not success then
             print('failed to payout for the route', data)
@@ -397,7 +397,7 @@ Job.End = function(isForfeit, hasReturnedBus)
         end
         if routeState == RouteState.FinishedWithoutVehicle then
             ESX.ShowNotification('You ~g~completed~s~ the route, but ~r~forfeited~s~ your deposit', true, true, 10)
-        end        
+        end
         if routeState == RouteState.FinishedWithVehicle then
             ESX.ShowNotification('You ~g~completed~s~ the route. Your deposit was ~g~returned', true, true, 10)
         end
@@ -416,7 +416,7 @@ end
 
 
 -- Gets the stop the bus has to get to
-Job.GetNextStop = function() 
+Job.GetNextStop = function()
     if Job.route and #Job.route.stops >= Job.nextStop then
         return Job.route.stops[Job.nextStop]
     end
