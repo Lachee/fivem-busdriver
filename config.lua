@@ -9,7 +9,7 @@ Config.stopColor = { r = 148, g = 0, b = 211 } -- The colour for the markers
 
 Config.deposit = 200                -- How much the buses cost. The player get this back if they return the bus
 Config.earningBase = 0              -- How many dollars does the player get from just completing the job.
-Config.earningPerKM = 0.1           -- How many dollars per km does a route earn. 0.1 gives about 400/10minutes. 
+Config.earningPerKM = 0.1           -- How many dollars per km does a route earn. 0.1 gives about 400/10minutes.
                                     --      Distance of route is calculated "as the bird flys", use the
                                     --      route "multiplier" in the database to account for this.
                                     --      Try either 0.05 or 0.025
@@ -22,6 +22,6 @@ Config.alwaysRenderStops = Config.debug -- Always render the names of the stop w
 Config.alwaysShowBlips = false -- Always shows the bus stop blips
 
 Config.passengerRadius = 200.0 -- Distance before passengers are spawned
-Config.pedVehicleTimeout = 15000 -- How long to wait till we give up and TP the passenger
+Config.pedVehicleTimeout = 15.0 -- How long to wait till we give up and TP the passenger
 Config.stopDistanceLimit = 1.0 -- How close the bus has to be to the stop
 Config.stopHeadingLimit = 5.0 -- How many degrees the bus must be within wiht the stop

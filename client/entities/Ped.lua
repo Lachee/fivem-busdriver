@@ -4,7 +4,7 @@
 
 Ped = {}
 Ped.maxSpawnAttempts = 100  -- How many MS we are willing to wait for it to load
-Ped.defaultVehicleTimeout = Config.pedVehicleTimeout or 5.0
+Ped.defaultVehicleTimeout = (Config.pedVehicleTimeout + 0.0) or 5.0
 
 Ped._spawn = {}
 
@@ -13,7 +13,7 @@ Ped.RUN = 2.0
 Ped.TELEPORT = 999.0
 
 -- Gets a random ped model
-Ped.RandomModel = function() 
+Ped.RandomModel = function()
     -- TODO: Ensure we dont reuse peds
     return Ped.models[math.random(#Ped.models)]
 end
@@ -25,13 +25,13 @@ end
 Ped.Spawn = function(model, coords, callback, networked)
     local hash = GetHashKey(model)
     local spawnAttempts = Ped.maxSpawnAttempts
-    
+
     --Ensure the network argument
     if networked == nil then networked = true end
 
     print('Spawning Ped: ', model, hash, coords, networked)
 
-    local load = function() 
+    local load = function()
         -- Load the model
         RequestModel(hash)
         while not HasModelLoaded(hash) and spawnAttempts > 0 do
@@ -49,7 +49,7 @@ Ped.Spawn = function(model, coords, callback, networked)
 
         -- Create the ped
         local ped = CreatePed(4, hash, coordHeading.x+.0, coordHeading.y+.0, coordHeading.z+.0, coordHeading.w+.0, networked, false)
-        if ped == 0 then 
+        if ped == 0 then
             print('warning: failed to create the ped', model, coordHeading)
             return nil
         end
@@ -60,7 +60,7 @@ Ped.Spawn = function(model, coords, callback, networked)
 
     if callback ~= nil then
         Citizen.CreateThread(function()
-           callback(load()) 
+           callback(load())
         end)
     else
         return load()
@@ -74,7 +74,7 @@ Ped.SpawnRandom = function(coords, callback)
 end
 
 -- Spawns a random ped that is not networked
-Ped.SpawnRandomLocal = function(coords, callback) 
+Ped.SpawnRandomLocal = function(coords, callback)
     local model = Ped.RandomModel()
     return Ped.Spawn(model, coords, callback, false)
 end
@@ -127,7 +127,7 @@ Ped.EnterVehicle = function(ped, vehicle, seat, speed, timeout, priority)
 
     -- Clear the ped's previous task
     if priority then
-        ClearPedTasksImmediately(ped) 
+        ClearPedTasksImmediately(ped)
     end
 
     -- Tell them to get in the damn car
@@ -146,15 +146,15 @@ end
 --- Asks the ped to leave the vehicle
 -- @params ped the ped
 -- @params style the way to exit the vehicle. See TaskLeaveVehicle.
---              0 = normal exit and closes door.  
---              1 = normal exit and closes door.  
---              16 = teleports outside, door kept closed.  
---              64 = normal exit and closes door, maybe a bit slower animation than 0.  
---              256 = normal exit but does not close the door.  
---              4160 = ped is throwing himself out, even when the vehicle is still.  
---              262144 = ped moves to passenger seat first, then exits normally  
+--              0 = normal exit and closes door.
+--              1 = normal exit and closes door.
+--              16 = teleports outside, door kept closed.
+--              64 = normal exit and closes door, maybe a bit slower animation than 0.
+--              256 = normal exit but does not close the door.
+--              4160 = ped is throwing himself out, even when the vehicle is still.
+--              262144 = ped moves to passenger seat first, then exits normally
 -- @params vehicle the vehicle to exit out of. If nil then it will be the last vehicle the ped is in.
-Ped.ExitVehicle = function(ped, style, vehicle) 
+Ped.ExitVehicle = function(ped, style, vehicle)
     if ped == nil or ped == 0 then print('error: ExitVehicle: ped is empty.') return false end
     if style == nil then style = 1 end
     if vehicle == nil then vehicle = GetVehiclePedIsIn(ped, true) end
@@ -170,9 +170,9 @@ Ped.ExitVehicle = function(ped, style, vehicle)
 end
 
 --- Tells GTA they can elegantly clean up this ped
-Ped.Remove = function(ped) 
+Ped.Remove = function(ped)
     if ped == nil or ped == 0 then print('error: Remove: ped is empty.') return false end
-    
+
     print('Remove Ped:', ped)
     RemovePedElegantly(ped)
 end
@@ -180,7 +180,7 @@ end
 --- Makes the ped wander away and eventually get deleted
 Ped.WanderAway = function(ped)
     if ped == nil or ped == 0 then print('error: WanderWay: ped is empty.') return false end
-    
+
     print('Wander Ped:', ped)
     TaskWanderStandard(ped, 10.0, 10)
     Ped.Remove(ped)
@@ -192,12 +192,12 @@ Ped.InVehicle = function(ped, vehicle, asGetIn)
     if asGetIn == nil then asGetIn = true end
     if vehicle == nil then vehicle = GetVehiclePedIsIn(ped, true) end
     if vehicle == nil or vehicle == 0 then return false end
-    
+
     return IsPedInVehicle(ped, vehicle)
 end
 
 -- Checks if the ped is dead
-Ped.IsDead = function(ped) 
+Ped.IsDead = function(ped)
     if ped == nil or ped == 0 then print('error: IsDead: ped is empty.') return false end
     return IsPedFatallyInjured(ped) or IsPedDeadOrDying(ped, 1)
 end
